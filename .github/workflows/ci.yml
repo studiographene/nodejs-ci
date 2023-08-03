@@ -13,6 +13,15 @@ on:
             npm_token:
                 type: string
                 default: ""
+            build_command:
+                type: string
+                default: "npm run build"
+            docker_build_command:
+                type: string
+                default: "docker build -t local:latest ."
+            lint_command:
+                type: string
+                default: "npm run lint"
 
 jobs:
 
@@ -30,21 +39,6 @@ jobs:
               run: |
                 semgrep scan --config "p/default" --sarif > semgrep.sarif
                 cat semgrep.sarif
-
-    osv:
-        name: OSV/Dependency Scan using Google OSV
-        if: ${{ !contains( inputs.exclude_jobs, 'osv' ) && (github.actor != 'dependabot[bot]') }}
-        runs-on: ubuntu-latest
-        permissions: write-all
-        container:
-            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:1.0
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v2
-            - name: OSV Scan
-              run: |
-                osv-scanner --format table -r .
-    
     sbom:
         name: SBOM Generator using CycloneDX
         runs-on: ubuntu-latest
@@ -65,3 +59,80 @@ jobs:
               with:
                 name: sbom
                 path: bom.json
+
+    osv:
+        name: OSV/Dependency Scan using Google OSV
+        needs: sbom
+        if: ${{ !contains( inputs.exclude_jobs, 'osv' ) && (github.actor != 'dependabot[bot]') }}
+        runs-on: ubuntu-latest
+        permissions: write-all
+        container:
+            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:1.0
+        steps:
+            - name: Download Artifact
+              uses: actions/download-artifact@v2
+              with:
+                name: sbom
+                path: .
+            - name: OSV Scan
+              run: |
+                osv-scanner --format table --sbom=bom.json
+    
+    gitleaks:
+        name: Gitleaks scan to find secrets
+        if: ${{ !contains( inputs.exclude_jobs, 'gitleaks' ) && (github.actor != 'dependabot[bot]') }}
+        runs-on: ubuntu-latest
+        permissions: write-all
+        container:
+            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:1.0
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v2
+            - name: GitLeaks Scan
+              run: |
+                gitleaks detect -r gitleaks-report.json -f json
+    
+    lint:
+        name: eslint scan to find linting issues
+        if: ${{ !contains( inputs.exclude_jobs, 'lint' ) && (github.actor != 'dependabot[bot]') }}
+        runs-on: ubuntu-latest
+        permissions: write-all
+        container:
+            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:1.0
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v2
+            - name: GitLeaks Scan
+              run: |
+                ${{ inputs.lint_command }}
+    
+    build:
+        name: project build check
+        if: ${{ !contains( inputs.exclude_jobs, 'build' ) && (github.actor != 'dependabot[bot]') }}
+        runs-on: ubuntu-latest
+        permissions: write-all
+        container:
+            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:1.0
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v2
+            - name: Install dependencies
+              run: |
+                ${{ inputs.package_manager }} install
+            - name: Build project
+              run: |
+                ${{ inputs.build_command }}
+
+    docker_build:
+        name: Docker build check
+        if: ${{ !contains( inputs.exclude_jobs, 'build' ) && (github.actor != 'dependabot[bot]') }}
+        runs-on: ubuntu-latest
+        permissions: write-all
+        container:
+            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:1.0
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v2
+            - name: Docker Build project
+              run: |
+                ${{ inputs.docker_build_command }}
