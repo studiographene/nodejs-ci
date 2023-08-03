@@ -31,13 +31,13 @@ jobs:
         runs-on: ubuntu-latest
         permissions: write-all
         container:
-            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:1.0
+            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.0
         steps:
             - name: Checkout
               uses: actions/checkout@v2
             - name: SAST Scan
               run: |
-                semgrep scan --config "p/default" --sarif > semgrep.sarif
+                semgrep scan --config "p/default" --config /root/configs/semgrep/rules/eslint.yml --sarif > semgrep.sarif
                 cat semgrep.sarif
     sbom:
         name: SBOM Generator using CycloneDX
@@ -76,8 +76,6 @@ jobs:
                 path: .
             - name: OSV Scan
               run: |
-                ls -al
-                cat bom.xml
                 osv-scanner --format table --sbom=bom.xml
     
     gitleaks:
@@ -101,7 +99,7 @@ jobs:
         runs-on: ubuntu-latest
         permissions: write-all
         container:
-            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:1.0
+            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.0
         steps:
             - name: Checkout
               uses: actions/checkout@v2
@@ -126,9 +124,9 @@ jobs:
               run: |
                 ${{ inputs.build_command }}
 
-    docker_build:
+    dockerbuild:
         name: Docker build check
-        if: ${{ !contains( inputs.excluded_jobs, 'docker_build' ) && (github.actor != 'dependabot[bot]') }}
+        if: ${{ !contains( inputs.excluded_jobs, 'dockerbuild' ) && (github.actor != 'dependabot[bot]') }}
         runs-on: ubuntu-latest
         permissions: write-all
         steps:
