@@ -127,9 +127,9 @@ jobs:
               run: |
                 ${{ inputs.build_command }}
 
-    dockerbuild:
+    docker:
         name: Docker build check
-        if: ${{ !contains( inputs.excluded_jobs, 'dockerbuild' ) && (github.actor != 'dependabot[bot]') }}
+        if: ${{ !contains( inputs.excluded_jobs, 'docker' ) && (github.actor != 'dependabot[bot]') }}
         runs-on: ubuntu-latest
         permissions: write-all
         steps:
