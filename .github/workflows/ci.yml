@@ -44,3 +44,17 @@ jobs:
             - name: OSV Scan
               run: |
                 osv-scanner --format table -r .
+    
+    sbom:
+        name: SBOM Generator using CycloneDX
+        runs-on: ubuntu-latest
+        permissions: write-all
+        container:
+            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:1.0
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v2
+            - name: OSV Scan
+              run: |
+                EXPORT FETCH_LICENSES=true
+                cdxgen -r -o bom.json -p
