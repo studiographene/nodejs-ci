@@ -141,7 +141,7 @@ jobs:
     
     danger:
         name: run danger check
-        if: ${{ !contains( inputs.excluded_jobs, 'lint' ) && (github.actor != 'dependabot[bot]') }}
+        if: ${{ !contains( inputs.excluded_jobs, 'danger' ) && (github.actor != 'dependabot[bot]') }}
         runs-on: ubuntu-latest
         permissions: write-all
         container:
