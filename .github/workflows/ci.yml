@@ -27,6 +27,4 @@ jobs:
               uses: actions/checkout@v2
             - name: SAST Scan
               run: |
-                ls -al
-                semgrep --version
-                pwd
+                semgrep --config "p/default" --json
