@@ -1,0 +1,32 @@
+on:
+    workflow_call:
+        inputs:
+            project_name:
+                type: string
+                default: "sg-ci"
+            excluded_jobs:
+                type: string
+                default: ""
+            package_manager:
+                type: string
+                default: "npm"
+            npm_token:
+                type: string
+                default: ""
+
+jobs:
+
+    sast:
+        name: SAST Scan using semgrep
+        runs-on: ubuntu-latest
+        permissions: write-all
+        container:
+            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:1.0
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v2
+            - name: SAST Scan
+              run: |
+                ls -al
+                semgrep --version
+                pwd
