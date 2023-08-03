@@ -155,4 +155,4 @@ jobs:
             - name: danger check
               run: |
                 cp /root/configs/dangerfile.ts dangerfile.ts
-                danger
+                danger ci
