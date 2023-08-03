@@ -156,3 +156,5 @@ jobs:
               run: |
                 cp /root/configs/dangerfile.ts dangerfile.ts
                 danger ci
+              env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
