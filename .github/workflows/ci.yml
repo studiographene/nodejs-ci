@@ -138,3 +138,21 @@ jobs:
             - name: Docker Build project
               run: |
                 ${{ inputs.docker_build_command }}
+    
+    danger:
+        name: run danger check
+        if: ${{ !contains( inputs.excluded_jobs, 'lint' ) && (github.actor != 'dependabot[bot]') }}
+        runs-on: ubuntu-latest
+        permissions: write-all
+        container:
+            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.0
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v2
+            - name: Install dependencies
+              run: |
+                ${{ inputs.package_manager }} install
+            - name: danger check
+              run: |
+                cp /root/configs/dangerfile.ts dangerfile.ts
+                danger
