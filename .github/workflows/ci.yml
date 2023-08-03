@@ -76,6 +76,7 @@ jobs:
                 path: .
             - name: OSV Scan
               run: |
+                ls -al
                 osv-scanner --format table --sbom=bom.json
     
     gitleaks:
@@ -83,14 +84,15 @@ jobs:
         if: ${{ !contains( inputs.exclude_jobs, 'gitleaks' ) && (github.actor != 'dependabot[bot]') }}
         runs-on: ubuntu-latest
         permissions: write-all
-        container:
-            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:1.0
         steps:
             - name: Checkout
-              uses: actions/checkout@v2
-            - name: GitLeaks Scan
-              run: |
-                gitleaks detect -r gitleaks-report.json -f json
+              uses: actions/checkout@v3
+              with:
+                fetch-depth: 0
+            - name: Gitleaks scan
+              uses:  gitleaks/gitleaks-action@v1.6.0
+              env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     
     lint:
         name: eslint scan to find linting issues
@@ -102,7 +104,7 @@ jobs:
         steps:
             - name: Checkout
               uses: actions/checkout@v2
-            - name: GitLeaks Scan
+            - name: Eslint scan
               run: |
                 ${{ inputs.lint_command }}
     
@@ -125,7 +127,7 @@ jobs:
 
     docker_build:
         name: Docker build check
-        if: ${{ !contains( inputs.exclude_jobs, 'build' ) && (github.actor != 'dependabot[bot]') }}
+        if: ${{ !contains( inputs.exclude_jobs, 'docker_build' ) && (github.actor != 'dependabot[bot]') }}
         runs-on: ubuntu-latest
         permissions: write-all
         container:
