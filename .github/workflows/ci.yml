@@ -60,3 +60,8 @@ jobs:
               env:
                 FETCH_LICENSE: true
                 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+            - name: Upload Artifact
+              uses: actions/upload-artifact@v2
+              with:
+                name: sbom
+                path: sbom.json
