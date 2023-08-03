@@ -27,7 +27,7 @@ jobs:
 
     sast:
         name: SAST Scan using semgrep
-        if: ${{ !contains( inputs.exclude_jobs, 'sast' ) && (github.actor != 'dependabot[bot]') }}
+        if: ${{ !contains( inputs.excluded_jobs, 'sast' ) && (github.actor != 'dependabot[bot]') }}
         runs-on: ubuntu-latest
         permissions: write-all
         container:
@@ -50,7 +50,7 @@ jobs:
               uses: actions/checkout@v2
             - name: OSV Scan
               run: |
-                cdxgen -r -o bom.json -p
+                cdxgen -r -o bom.xml -p
               env:
                 FETCH_LICENSE: true
                 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -58,12 +58,12 @@ jobs:
               uses: actions/upload-artifact@v2
               with:
                 name: sbom
-                path: bom.json
+                path: bom.xml
 
     osv:
         name: OSV/Dependency Scan using Google OSV
         needs: sbom
-        if: ${{ !contains( inputs.exclude_jobs, 'osv' ) && (github.actor != 'dependabot[bot]') }}
+        if: ${{ !contains( inputs.excluded_jobs, 'osv' ) && (github.actor != 'dependabot[bot]') }}
         runs-on: ubuntu-latest
         permissions: write-all
         container:
@@ -77,11 +77,12 @@ jobs:
             - name: OSV Scan
               run: |
                 ls -al
-                osv-scanner --format table --sbom=bom.json
+                cat bom.xml
+                osv-scanner --format table --sbom=bom.xml
     
     gitleaks:
         name: Gitleaks scan to find secrets
-        if: ${{ !contains( inputs.exclude_jobs, 'gitleaks' ) && (github.actor != 'dependabot[bot]') }}
+        if: ${{ !contains( inputs.excluded_jobs, 'gitleaks' ) && (github.actor != 'dependabot[bot]') }}
         runs-on: ubuntu-latest
         permissions: write-all
         steps:
@@ -96,7 +97,7 @@ jobs:
     
     lint:
         name: eslint scan to find linting issues
-        if: ${{ !contains( inputs.exclude_jobs, 'lint' ) && (github.actor != 'dependabot[bot]') }}
+        if: ${{ !contains( inputs.excluded_jobs, 'lint' ) && (github.actor != 'dependabot[bot]') }}
         runs-on: ubuntu-latest
         permissions: write-all
         container:
@@ -110,7 +111,7 @@ jobs:
     
     build:
         name: project build check
-        if: ${{ !contains( inputs.exclude_jobs, 'build' ) && (github.actor != 'dependabot[bot]') }}
+        if: ${{ !contains( inputs.excluded_jobs, 'build' ) && (github.actor != 'dependabot[bot]') }}
         runs-on: ubuntu-latest
         permissions: write-all
         container:
@@ -127,11 +128,9 @@ jobs:
 
     docker_build:
         name: Docker build check
-        if: ${{ !contains( inputs.exclude_jobs, 'docker_build' ) && (github.actor != 'dependabot[bot]') }}
+        if: ${{ !contains( inputs.excluded_jobs, 'docker_build' ) && (github.actor != 'dependabot[bot]') }}
         runs-on: ubuntu-latest
         permissions: write-all
-        container:
-            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:1.0
         steps:
             - name: Checkout
               uses: actions/checkout@v2
