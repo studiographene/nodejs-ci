@@ -1,3 +1,4 @@
+name: studiographene-ci
 on:
     workflow_call:
         inputs:
