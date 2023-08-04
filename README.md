@@ -8,19 +8,19 @@ name: studiographene-ci
 on:
   pull_request: {}
   push:
-    branches: ["master", "main", "dev", "uat", "qa"]
+    branches: ["master", "main", "dev"]
   workflow_dispatch:
 
 jobs:
   call-workflow:
-    uses: studiographene/studiographene-reactjs-scans/.github/workflows/ci.yml@feature/pnpm-microservices
-  
-
+    uses: studiographene/nodejs-ci/.github/workflows/ci.yml@master
     with:
-      project_name: microservices-boilerplate
-      exclude-jobs: ""
+      project_name: microservice-boilerplate
+      package_manager: pnpm
+      build_command: pnpm run build
+      lint_command: pnpm run lint
+      excluded_jobs: docker
     secrets: inherit
-
     permissions: write-all
 ```
 
