@@ -49,6 +49,9 @@ jobs:
         steps:
             - name: Checkout
               uses: actions/checkout@v2
+            - name: Install dependencies
+              run: |
+                ${{ inputs.package_manager }} install
             - name: OSV Scan
               run: |
                 cdxgen -r -o bom.xml -p
