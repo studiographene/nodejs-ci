@@ -58,6 +58,7 @@ jobs:
               env:
                 FETCH_LICENSE: true
                 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                CDXGEN_DEBUG_MODE: debug
             - name: Upload Artifact
               uses: actions/upload-artifact@v2
               with:
