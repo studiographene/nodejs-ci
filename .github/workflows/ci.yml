@@ -54,10 +54,11 @@ jobs:
                 ${{ inputs.package_manager }} install
             - name: OSV Scan
               run: |
-                cdxgen -r -o bom.xml -p
+                cdxgen -r --required-only --no-babel -o bom.xml -p
               env:
                 FETCH_LICENSE: true
                 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                CDXGEN_DEBUG_MODE: debug
             - name: Upload Artifact
               uses: actions/upload-artifact@v2
               with:
