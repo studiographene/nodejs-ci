@@ -93,6 +93,7 @@ jobs:
             - name: Checkout
               uses: actions/checkout@v2
             - name: SAST Scan
+              id : generate_report
               run: |
                 semgrep scan --config "p/default" --config /root/configs/semgrep/rules/eslint.yml --sarif > semgrep.sarif
                 cat semgrep.sarif
@@ -114,21 +115,22 @@ jobs:
                     const lineNumber = location.region.startLine;
                     const fileName = location.artifactLocation.uri;
                     // Add data to the tableData array
-                    tableData.push(ruleId + "," + message +"," + lineNumber + "," + fileName);
+                    tableData.push(ruleId + "|" + message +"|" + lineNumber + "|" + fileName);
                   }
                 }                  
                 // Log the CSV data as a string
                 const csvData = tableData.join('\n');
-                // Write CSV data to a file
-                fs.writeFileSync('semgrep.csv', csvData);
-                EOF
-            - name: Generate report
-              id: generate_report
-              run: |
                 echo 'report<<EOF' >> $GITHUB_OUTPUT
-                echo "$(cat semgrep.csv | tr , '|')" >> $GITHUB_OUTPUT
+                echo "$csvData" >> $GITHUB_OUTPUT
                 echo 'EOF' >> $GITHUB_OUTPUT
-                echo "count=$(cat semgrep.csv | awk 'NF' | wc -l)" >> $GITHUB_OUTPUT;
+                EOF
+            # - name: Generate report
+            #   id: generate_report
+            #   run: |
+            #     echo 'report<<EOF' >> $GITHUB_OUTPUT
+            #     echo "$(cat semgrep.csv | tr , '|')" >> $GITHUB_OUTPUT
+            #     echo 'EOF' >> $GITHUB_OUTPUT
+            #     echo "count=$(cat semgrep.csv | awk 'NF' | wc -l)" >> $GITHUB_OUTPUT;
             - name: print report
               id: print
               run: 
@@ -136,7 +138,6 @@ jobs:
                 echo -e "**ruleId, message, lineNumber, fileName**";
                 echo "${{ steps.generate_report.outputs.report }}";
                 echo -e "\n";
-                echo count ${{ steps.generate_report.outputs.count }};
             - uses: mshick/add-pr-comment@v2
               with:
                 message:
