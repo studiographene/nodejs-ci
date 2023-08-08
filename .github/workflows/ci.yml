@@ -34,7 +34,7 @@ jobs:
         runs-on: ubuntu-latest
         permissions: write-all
         container:
-            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.0
+            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.2
         steps:
             - name: Checkout
               uses: actions/checkout@v2
@@ -148,10 +148,18 @@ jobs:
         permissions: write-all
         needs: caching
         container:
-            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:1.0
+            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.2
         steps:
             - name: Checkout
               uses: actions/checkout@v2
+            - name: Cache pnpm modules
+              uses: actions/cache@v3
+              if: inputs.package_manager == 'pnpm'
+              with:
+                path: /__w/.pnpm-store
+                key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+                restore-keys: |
+                  ${{ runner.os }}-pnpm-
             - name: Install dependencies
               run: |
                 ${{ inputs.package_manager }} install
