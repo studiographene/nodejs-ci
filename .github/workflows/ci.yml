@@ -29,6 +29,55 @@ on:
 
 jobs:
 
+    caching:
+        name: Cache node modules
+        runs-on: ubuntu-latest
+        permissions: write-all
+        container:
+            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.0
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v2
+            - name: Install dependencies
+              run: |
+                ${{ inputs.package_manager }} install
+            - name: Cache npm modules
+              uses: actions/cache@v3
+              if: ${{ !contains( inputs.package_manager, 'npm' ) }}
+              env:
+                cache-name: cache-node-modules
+              with:
+                path: ~/.npm
+                key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+                restore-keys: |
+                  ${{ runner.os }}-build-${{ env.cache-name }}-
+                  ${{ runner.os }}-build-
+                  ${{ runner.os }}-
+            - name: Cache yarn modules
+              uses: actions/cache@v3
+              if: ${{ !contains( inputs.package_manager, 'yarn' ) }}
+              env:
+                cache-name: cache-node-modules
+              with:
+                path: ~/.cache/yarn
+                key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/yarn.lock') }}
+                restore-keys: |
+                  ${{ runner.os }}-build-${{ env.cache-name }}-
+                  ${{ runner.os }}-build-
+                  ${{ runner.os }}-
+            - name: Cache pnpm modules
+              uses: actions/cache@v3
+              if: ${{ !contains( inputs.package_manager, 'pnpm' ) }}
+              env:
+                cache-name: cache-node-modules
+              with:
+                path: ~/.pnpm-store
+                key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+                restore-keys: |
+                  ${{ runner.os }}-build-${{ env.cache-name }}-
+                  ${{ runner.os }}-build-
+                  ${{ runner.os }}-
+
     sast:
         name: SAST Scan using semgrep
         if: ${{ !contains( inputs.excluded_jobs, 'sast' ) && (github.actor != 'dependabot[bot]') }}
@@ -47,6 +96,7 @@ jobs:
         name: SBOM Generator using CycloneDX
         runs-on: ubuntu-latest
         permissions: write-all
+        needs: caching
         container:
             image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:1.0
         steps:
@@ -125,6 +175,7 @@ jobs:
         if: ${{ !contains( inputs.excluded_jobs, 'lint' ) && (github.actor != 'dependabot[bot]') }}
         runs-on: ubuntu-latest
         permissions: write-all
+        needs: caching
         container:
             image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.0
         steps:
@@ -142,6 +193,7 @@ jobs:
         if: ${{ !contains( inputs.excluded_jobs, 'build' ) && (github.actor != 'dependabot[bot]') }}
         runs-on: ubuntu-latest
         permissions: write-all
+        needs: caching
         container:
             image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:1.0
         steps:
@@ -171,6 +223,7 @@ jobs:
         if: ${{ !contains( inputs.excluded_jobs, 'danger' ) && (github.actor != 'dependabot[bot]') }}
         runs-on: ubuntu-latest
         permissions: write-all
+        needs: caching
         container:
             image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.0
         steps:
