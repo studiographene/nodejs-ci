@@ -89,7 +89,7 @@ jobs:
               run: |
                 semgrep scan --config "p/default" --config /root/configs/semgrep/rules/eslint.yml --sarif > semgrep.sarif
                 cat semgrep.sarif
-                node - << EOF
+                csvData=$(node - << EOF
                 const fs = require('fs');
                 const sarifFile = fs.readFileSync("semgrep.sarif", 'utf8');
                 const sarifData = JSON.parse(sarifFile);
@@ -112,10 +112,12 @@ jobs:
                 }                  
                 // Log the CSV data as a string
                 const csvData = tableData.join('\n');
+                console.log(csvData)
+                EOF)
                 echo 'report<<EOF' >> $GITHUB_OUTPUT
                 echo "$csvData" >> $GITHUB_OUTPUT
                 echo 'EOF' >> $GITHUB_OUTPUT
-                EOF
+ 
             # - name: Generate report
             #   id: generate_report
             #   run: |
