@@ -65,18 +65,22 @@ jobs:
                   ${{ runner.os }}-build-${{ env.cache-name }}-
                   ${{ runner.os }}-build-
                   ${{ runner.os }}-
+            - name: debugging
+              run: |
+                echo "debugging"
+                cd ~
+                ls -al
+                echo ${{ env.HOME }}
+                cd ${{ env.HOME }}/.pnpm-store
+                ls -al
             - name: Cache pnpm modules
               uses: actions/cache@v3
               if: inputs.package_manager == 'pnpm'
-              env:
-                cache-name: cache-node-modules
               with:
-                path: $(pnpm store path --silent)
-                key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/pnpm-lock.yaml') }}
+                path: ${{ env.HOME }}/.pnpm-store
+                key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
                 restore-keys: |
-                  ${{ runner.os }}-build-${{ env.cache-name }}-
-                  ${{ runner.os }}-build-
-                  ${{ runner.os }}-
+                  ${{ runner.os }}-pnpm-
 
     sast:
         name: SAST Scan using semgrep
