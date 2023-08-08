@@ -43,7 +43,7 @@ jobs:
                 ${{ inputs.package_manager }} install
             - name: Cache npm modules
               uses: actions/cache@v3
-              if: ${{ contains( inputs.package_manager, 'npm' ) }}
+              if: inputs.package_manager == 'npm'
               env:
                 cache-name: cache-node-modules
               with:
@@ -55,7 +55,7 @@ jobs:
                   ${{ runner.os }}-
             - name: Cache yarn modules
               uses: actions/cache@v3
-              if: ${{ contains( inputs.package_manager, 'yarn' ) }}
+              if: inputs.package_manager == 'yarn'
               env:
                 cache-name: cache-node-modules
               with:
@@ -67,7 +67,7 @@ jobs:
                   ${{ runner.os }}-
             - name: Cache pnpm modules
               uses: actions/cache@v3
-              if: ${{ contains( inputs.package_manager, 'pnpm' ) }}
+              if: inputs.package_manager == 'pnpm'
               env:
                 cache-name: cache-node-modules
               with:
