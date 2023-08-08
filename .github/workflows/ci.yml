@@ -68,6 +68,7 @@ jobs:
             - name: debugging
               run: |
                 echo "debugging"
+                pnpm store path
                 cd ~
                 ls -al
                 echo ${{ env.HOME }}
