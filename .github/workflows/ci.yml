@@ -23,6 +23,9 @@ on:
             lint_command:
                 type: string
                 default: "npm run lint"
+            allowedLicenses:
+                type: string
+                default: "allowed_licenses.txt"
 
 jobs:
 
@@ -82,6 +85,23 @@ jobs:
             - name: OSV Scan
               run: |
                 osv-scanner --format table --sbom=bom.xml
+    licenseScan:
+        name: Executing a licenseScan using studiographene-cli
+        needs: sbom
+        if: ${{ !contains( inputs.excluded_jobs, 'licenseScan' ) && (github.actor != 'dependabot[bot]') }}
+        runs-on: ubuntu-latest
+        permissions: write-all
+        container:
+            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.1
+        steps:
+            - name: Download Artifact
+              uses: actions/download-artifact@v2
+              with:
+                name: sbom
+                path: .
+            - name: License Scan
+              run: |
+                /root/executables/studiographene-cli check --sbom bom.xml --allowedLicences ${{ inputs.allowedLicenses }}
     
     gitleaks:
         name: Gitleaks scan to find secrets
