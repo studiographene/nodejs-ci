@@ -103,7 +103,6 @@ jobs:
                 path: .
             - name: License Scan
               run: |
-                ls -al
                 /root/executables/studiographene-ci check --sbom bom.xml --allowedLicences ${{ inputs.allowedLicenses }}
     
     gitleaks:
