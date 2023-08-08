@@ -150,6 +150,14 @@ jobs:
         steps:
             - name: Checkout
               uses: actions/checkout@v2
+            - name: Cache pnpm modules
+              uses: actions/cache@v3
+              if: inputs.package_manager == 'pnpm'
+              with:
+                path: /__w/.pnpm-store
+                key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+                restore-keys: |
+                  ${{ runner.os }}-pnpm-
             - name: Install dependencies
               run: |
                 ${{ inputs.package_manager }} install
