@@ -121,27 +121,12 @@ jobs:
                 echo "$csvData" >> $GITHUB_OUTPUT
                 echo 'EOF' >> $GITHUB_OUTPUT
 
- 
-            # - name: Generate report
-            #   id: generate_report
-            #   run: |
-            #     echo 'report<<EOF' >> $GITHUB_OUTPUT
-            #     echo "$(cat semgrep.csv | tr , '|')" >> $GITHUB_OUTPUT
-            #     echo 'EOF' >> $GITHUB_OUTPUT
-            #     echo "count=$(cat semgrep.csv | awk 'NF' | wc -l)" >> $GITHUB_OUTPUT;
-            - name: print report
-              id: print
-              run: 
-                echo "Issues found by semgrep:\n";
-                echo -e "**ruleId, message, lineNumber, fileName**";
-                echo "${{ steps.generate_report.outputs.report }}";
-                echo -e "\n";
             - uses: mshick/add-pr-comment@v2
               with:
                 message:
                   "### Semgrep Report \n
                     Below are the issues found by semgrep: \n
-                    \n\nruleId | message | lineNumber | fileName \n
+                    \n\nRule Id | Message | Line Number | File Name \n
                     --- | --- | --- | --- \n
                     ${{steps.generate_report.outputs.report}}\n\n
                   "
