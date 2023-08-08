@@ -65,20 +65,11 @@ jobs:
                   ${{ runner.os }}-build-${{ env.cache-name }}-
                   ${{ runner.os }}-build-
                   ${{ runner.os }}-
-            - name: debugging
-              run: |
-                echo "debugging"
-                pnpm store path
-                cd ~
-                ls -al
-                echo ${{ env.HOME }}
-                cd ${{ env.HOME }}/.pnpm-store
-                ls -al
             - name: Cache pnpm modules
               uses: actions/cache@v3
               if: inputs.package_manager == 'pnpm'
               with:
-                path: ${{ env.HOME }}/.pnpm-store
+                path: /__w/.pnpm-store
                 key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
                 restore-keys: |
                   ${{ runner.os }}-pnpm-
