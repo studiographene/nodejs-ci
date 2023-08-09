@@ -44,7 +44,7 @@ jobs:
             - name: Debugging
               run: |
                 npm cache verify
-                pnpm store location
+                pnpm store path
                 yarn cache dir
             - name: Cache npm modules
               uses: actions/cache@v3
