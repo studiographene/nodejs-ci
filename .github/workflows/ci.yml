@@ -41,12 +41,17 @@ jobs:
             - name: Install dependencies
               run: |
                 ${{ inputs.package_manager }} install
+            - name: Debugging
+              run: |
+                npm cache
+                pnpm store location
+                yarn cache dir
             - name: Cache npm modules
               uses: actions/cache@v3
               if: inputs.package_manager == 'npm'
               with:
-                path: /__w/.npm
-                key: ${{ runner.os }}-yarn-${{ hashFiles('**/package-lock.lock') }}
+                path: ~/.npm
+                key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.lock') }}
                 restore-keys: |
                   ${{ runner.os }}-npm-
             - name: Cache yarn modules
@@ -138,7 +143,7 @@ jobs:
               if: inputs.package_manager == 'npm'
               with:
                 path: /__w/.npm
-                key: ${{ runner.os }}-yarn-${{ hashFiles('**/package-lock.lock') }}
+                key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.lock') }}
                 restore-keys: |
                   ${{ runner.os }}-npm-
             - name: Cache yarn modules
@@ -241,7 +246,7 @@ jobs:
               if: inputs.package_manager == 'npm'
               with:
                 path: /__w/.npm
-                key: ${{ runner.os }}-yarn-${{ hashFiles('**/package-lock.lock') }}
+                key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.lock') }}
                 restore-keys: |
                   ${{ runner.os }}-npm-
             - name: Cache yarn modules
@@ -283,7 +288,7 @@ jobs:
               if: inputs.package_manager == 'npm'
               with:
                 path: /__w/.npm
-                key: ${{ runner.os }}-yarn-${{ hashFiles('**/package-lock.lock') }}
+                key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.lock') }}
                 restore-keys: |
                   ${{ runner.os }}-npm-
             - name: Cache yarn modules
@@ -339,7 +344,7 @@ jobs:
               if: inputs.package_manager == 'npm'
               with:
                 path: /__w/.npm
-                key: ${{ runner.os }}-yarn-${{ hashFiles('**/package-lock.lock') }}
+                key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.lock') }}
                 restore-keys: |
                   ${{ runner.os }}-npm-
             - name: Cache yarn modules
