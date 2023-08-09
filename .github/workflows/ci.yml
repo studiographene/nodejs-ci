@@ -43,7 +43,7 @@ jobs:
                 ${{ inputs.package_manager }} install
             - name: Debugging
               run: |
-                npm cache
+                npm cache verify
                 pnpm store location
                 yarn cache dir
             - name: Cache npm modules
