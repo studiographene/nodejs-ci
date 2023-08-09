@@ -162,7 +162,7 @@ jobs:
                 ${{ inputs.package_manager }} install
             - name: generate sbom
               run: |
-                cdxgen -r --no-babel -o bom.xml -p
+                cdxgen --no-babel -o bom.xml -p
               env:
                 FETCH_LICENSE: true
                 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
