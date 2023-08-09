@@ -41,6 +41,8 @@ jobs:
             - name: Install dependencies
               run: |
                 ${{ inputs.package_manager }} install
+              env:
+                NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
             - name: Cache npm modules
               uses: actions/cache@v3
               if: inputs.package_manager == 'npm'
@@ -160,6 +162,8 @@ jobs:
             - name: Install dependencies
               run: |
                 ${{ inputs.package_manager }} install
+              env:
+                NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
             - name: generate sbom
               run: |
                 cdxgen --no-babel -o bom.xml -p
@@ -263,6 +267,8 @@ jobs:
             - name: Install dependencies
               run: |
                 ${{ inputs.package_manager }} install
+              env:
+                NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
             - name: Eslint scan
               run: |
                 ${{ inputs.lint_command }}
@@ -305,6 +311,8 @@ jobs:
             - name: Install dependencies
               run: |
                 ${{ inputs.package_manager }} install
+              env:
+                NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
             - name: Build project
               run: |
                 ${{ inputs.build_command }}
@@ -361,6 +369,8 @@ jobs:
             - name: Install dependencies
               run: |
                 ${{ inputs.package_manager }} install
+              env:
+                NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
             - name: danger check
               run: |
                 cp /root/configs/dangerfile.ts dangerfile.ts
