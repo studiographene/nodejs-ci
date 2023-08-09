@@ -41,11 +41,6 @@ jobs:
             - name: Install dependencies
               run: |
                 ${{ inputs.package_manager }} install
-            - name: Debugging
-              run: |
-                npm cache verify
-                pnpm store path
-                yarn cache dir
             - name: Cache npm modules
               uses: actions/cache@v3
               if: inputs.package_manager == 'npm'
@@ -58,7 +53,7 @@ jobs:
               uses: actions/cache@v3
               if: inputs.package_manager == 'yarn'
               with:
-                path: /__w/.cache/yarn
+                path: /usr/local/share/.cache/yarn
                 key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
                 restore-keys: |
                   ${{ runner.os }}-yarn-
@@ -142,7 +137,7 @@ jobs:
               uses: actions/cache@v3
               if: inputs.package_manager == 'npm'
               with:
-                path: /__w/.npm
+                path: ~/.npm
                 key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.lock') }}
                 restore-keys: |
                   ${{ runner.os }}-npm-
@@ -150,7 +145,7 @@ jobs:
               uses: actions/cache@v3
               if: inputs.package_manager == 'yarn'
               with:
-                path: /__w/.cache/yarn
+                path: /usr/local/share/.cache/yarn
                 key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
                 restore-keys: |
                   ${{ runner.os }}-yarn-
@@ -245,7 +240,7 @@ jobs:
               uses: actions/cache@v3
               if: inputs.package_manager == 'npm'
               with:
-                path: /__w/.npm
+                path: ~/.npm
                 key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.lock') }}
                 restore-keys: |
                   ${{ runner.os }}-npm-
@@ -253,7 +248,7 @@ jobs:
               uses: actions/cache@v3
               if: inputs.package_manager == 'yarn'
               with:
-                path: /__w/.cache/yarn
+                path: /usr/local/share/.cache/yarn
                 key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
                 restore-keys: |
                   ${{ runner.os }}-yarn-
@@ -287,7 +282,7 @@ jobs:
               uses: actions/cache@v3
               if: inputs.package_manager == 'npm'
               with:
-                path: /__w/.npm
+                path: ~/.npm
                 key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.lock') }}
                 restore-keys: |
                   ${{ runner.os }}-npm-
@@ -295,7 +290,7 @@ jobs:
               uses: actions/cache@v3
               if: inputs.package_manager == 'yarn'
               with:
-                path: /__w/.cache/yarn
+                path: /usr/local/share/.cache/yarn
                 key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
                 restore-keys: |
                   ${{ runner.os }}-yarn-
@@ -343,7 +338,7 @@ jobs:
               uses: actions/cache@v3
               if: inputs.package_manager == 'npm'
               with:
-                path: /__w/.npm
+                path: ~/.npm
                 key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.lock') }}
                 restore-keys: |
                   ${{ runner.os }}-npm-
@@ -351,7 +346,7 @@ jobs:
               uses: actions/cache@v3
               if: inputs.package_manager == 'yarn'
               with:
-                path: /__w/.cache/yarn
+                path: /usr/local/share/.cache/yarn
                 key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
                 restore-keys: |
                   ${{ runner.os }}-yarn-
