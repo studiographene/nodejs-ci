@@ -123,6 +123,7 @@ jobs:
 
             - uses: mshick/add-pr-comment@v2
               with:
+                message-id : sast-scan
                 message:
                   "### Semgrep Report \n
                     Below are the issues found by semgrep: \n
