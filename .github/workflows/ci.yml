@@ -37,34 +37,36 @@ jobs:
             image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.2
         steps:
             - name: Checkout
-              uses: actions/checkout@v2
+              uses: actions/checkout@v3
+              with:
+                ref: ${{ github.REF }}
             - name: Install dependencies
               run: |
                 ${{ inputs.package_manager }} install
+              env:
+                NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+            - name: Convert lockfile version > 2 in case of npm
+              if: inputs.package_manager == 'npm'
+              run: |
+                ${{ inputs.package_manager }} install --lockfile-version 2 --package-lock-only
+              env:
+                NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
             - name: Cache npm modules
               uses: actions/cache@v3
               if: inputs.package_manager == 'npm'
-              env:
-                cache-name: cache-node-modules
               with:
                 path: ~/.npm
-                key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/package-lock.json') }}
+                key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.lock') }}
                 restore-keys: |
-                  ${{ runner.os }}-build-${{ env.cache-name }}-
-                  ${{ runner.os }}-build-
-                  ${{ runner.os }}-
+                  ${{ runner.os }}-npm-
             - name: Cache yarn modules
               uses: actions/cache@v3
               if: inputs.package_manager == 'yarn'
-              env:
-                cache-name: cache-node-modules
               with:
-                path: ~/.cache/yarn
-                key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/yarn.lock') }}
+                path: /usr/local/share/.cache/yarn
+                key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
                 restore-keys: |
-                  ${{ runner.os }}-build-${{ env.cache-name }}-
-                  ${{ runner.os }}-build-
-                  ${{ runner.os }}-
+                  ${{ runner.os }}-yarn-
             - name: Cache pnpm modules
               uses: actions/cache@v3
               if: inputs.package_manager == 'pnpm'
@@ -73,6 +75,24 @@ jobs:
                 key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
                 restore-keys: |
                   ${{ runner.os }}-pnpm-
+            - name: Upload package-lock
+              uses: actions/upload-artifact@v2
+              if: inputs.package_manager == 'npm'
+              with:
+                name: lockFile
+                path: package-lock.json
+            - name: Upload yarn-lock
+              uses: actions/upload-artifact@v2
+              if: inputs.package_manager == 'yarn'
+              with:
+                name: lockFile
+                path: yarn.lock
+            - name: Upload pnpm-lock
+              uses: actions/upload-artifact@v2
+              if: inputs.package_manager == 'pnpm'
+              with:
+                name: lockFile
+                path: pnpm-lock.yaml
 
     sast:
         name: SAST Scan using semgrep
@@ -80,10 +100,12 @@ jobs:
         runs-on: ubuntu-latest
         permissions: write-all
         container:
-            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.0
+            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.2
         steps:
             - name: Checkout
-              uses: actions/checkout@v2
+              uses: actions/checkout@v3
+              with:
+                ref: ${{ github.REF }}
             - name: SAST Scan
               id : generate_report
               run: |
@@ -141,21 +163,17 @@ jobs:
             image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.2
         steps:
             - name: Checkout
-              uses: actions/checkout@v2
-            - name: Cache pnpm modules
-              uses: actions/cache@v3
-              if: inputs.package_manager == 'pnpm'
+              uses: actions/checkout@v3
               with:
-                path: /__w/.pnpm-store
-                key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
-                restore-keys: |
-                  ${{ runner.os }}-pnpm-
-            - name: Install dependencies
-              run: |
-                ${{ inputs.package_manager }} install
+                ref: ${{ github.REF }}
+            - name: Download Artifact
+              uses: actions/download-artifact@v2
+              with:
+                name: lockFile
+                path: .
             - name: generate sbom
               run: |
-                cdxgen -r --no-babel -o bom.xml -p
+                cdxgen --no-babel -o bom.xml -p
               env:
                 FETCH_LICENSE: true
                 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -173,7 +191,7 @@ jobs:
         runs-on: ubuntu-latest
         permissions: write-all
         container:
-            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:1.0
+            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.2
         steps:
             - name: Download Artifact
               uses: actions/download-artifact@v2
@@ -190,10 +208,12 @@ jobs:
         runs-on: ubuntu-latest
         permissions: write-all
         container:
-            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.1
+            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.2
         steps:
             - name: Checkout
-              uses: actions/checkout@v2
+              uses: actions/checkout@v3
+              with:
+                ref: ${{ github.REF }}
             - name: Download Artifact
               uses: actions/download-artifact@v2
               with:
@@ -225,13 +245,41 @@ jobs:
         permissions: write-all
         needs: caching
         container:
-            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.0
+            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.2
         steps:
             - name: Checkout
-              uses: actions/checkout@v2
+              uses: actions/checkout@v3
+              with:
+                ref: ${{ github.REF }}
+            - name: Cache npm modules
+              uses: actions/cache@v3
+              if: inputs.package_manager == 'npm'
+              with:
+                path: ~/.npm
+                key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.lock') }}
+                restore-keys: |
+                  ${{ runner.os }}-npm-
+            - name: Cache yarn modules
+              uses: actions/cache@v3
+              if: inputs.package_manager == 'yarn'
+              with:
+                path: /usr/local/share/.cache/yarn
+                key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+                restore-keys: |
+                  ${{ runner.os }}-yarn-
+            - name: Cache pnpm modules
+              uses: actions/cache@v3
+              if: inputs.package_manager == 'pnpm'
+              with:
+                path: /__w/.pnpm-store
+                key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+                restore-keys: |
+                  ${{ runner.os }}-pnpm-
             - name: Install dependencies
               run: |
                 ${{ inputs.package_manager }} install
+              env:
+                NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
             - name: Eslint scan
               run: |
                 ${{ inputs.lint_command }}
@@ -243,13 +291,41 @@ jobs:
         permissions: write-all
         needs: caching
         container:
-            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:1.0
+            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.2
         steps:
             - name: Checkout
-              uses: actions/checkout@v2
+              uses: actions/checkout@v3
+              with:
+                ref: ${{ github.REF }}
+            - name: Cache npm modules
+              uses: actions/cache@v3
+              if: inputs.package_manager == 'npm'
+              with:
+                path: ~/.npm
+                key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.lock') }}
+                restore-keys: |
+                  ${{ runner.os }}-npm-
+            - name: Cache yarn modules
+              uses: actions/cache@v3
+              if: inputs.package_manager == 'yarn'
+              with:
+                path: /usr/local/share/.cache/yarn
+                key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+                restore-keys: |
+                  ${{ runner.os }}-yarn-
+            - name: Cache pnpm modules
+              uses: actions/cache@v3
+              if: inputs.package_manager == 'pnpm'
+              with:
+                path: /__w/.pnpm-store
+                key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+                restore-keys: |
+                  ${{ runner.os }}-pnpm-
             - name: Install dependencies
               run: |
                 ${{ inputs.package_manager }} install
+              env:
+                NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
             - name: Build project
               run: |
                 ${{ inputs.build_command }}
@@ -261,7 +337,9 @@ jobs:
         permissions: write-all
         steps:
             - name: Checkout
-              uses: actions/checkout@v2
+              uses: actions/checkout@v3
+              with:
+                ref: ${{ github.REF }}
             - name: Docker Build project
               run: |
                 ${{ inputs.docker_build_command }}
@@ -273,15 +351,41 @@ jobs:
         permissions: write-all
         needs: caching
         container:
-            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.0
+            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.2
         steps:
             - name: Checkout
-              uses: actions/checkout@v2
+              uses: actions/checkout@v3
               with:
                 ref: ${{ github.REF }}
+            - name: Cache npm modules
+              uses: actions/cache@v3
+              if: inputs.package_manager == 'npm'
+              with:
+                path: ~/.npm
+                key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.lock') }}
+                restore-keys: |
+                  ${{ runner.os }}-npm-
+            - name: Cache yarn modules
+              uses: actions/cache@v3
+              if: inputs.package_manager == 'yarn'
+              with:
+                path: /usr/local/share/.cache/yarn
+                key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+                restore-keys: |
+                  ${{ runner.os }}-yarn-
+            - name: Cache pnpm modules
+              uses: actions/cache@v3
+              if: inputs.package_manager == 'pnpm'
+              with:
+                path: /__w/.pnpm-store
+                key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+                restore-keys: |
+                  ${{ runner.os }}-pnpm-
             - name: Install dependencies
               run: |
                 ${{ inputs.package_manager }} install
+              env:
+                NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
             - name: danger check
               run: |
                 cp /root/configs/dangerfile.ts dangerfile.ts
