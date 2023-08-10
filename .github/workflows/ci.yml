@@ -37,7 +37,9 @@ jobs:
             image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.2
         steps:
             - name: Checkout
-              uses: actions/checkout@v2
+              uses: actions/checkout@v3
+              with:
+                ref: ${{ github.REF }}
             - name: Install dependencies
               run: |
                 ${{ inputs.package_manager }} install
@@ -101,7 +103,9 @@ jobs:
             image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.2
         steps:
             - name: Checkout
-              uses: actions/checkout@v2
+              uses: actions/checkout@v3
+              with:
+                ref: ${{ github.REF }}
             - name: SAST Scan
               id : generate_report
               run: |
@@ -158,7 +162,9 @@ jobs:
             image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.2
         steps:
             - name: Checkout
-              uses: actions/checkout@v2
+              uses: actions/checkout@v3
+              with:
+                ref: ${{ github.REF }}
             - name: Download Artifact
               uses: actions/download-artifact@v2
               with:
@@ -204,7 +210,9 @@ jobs:
             image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.2
         steps:
             - name: Checkout
-              uses: actions/checkout@v2
+              uses: actions/checkout@v3
+              with:
+                ref: ${{ github.REF }}
             - name: Download Artifact
               uses: actions/download-artifact@v2
               with:
@@ -239,7 +247,9 @@ jobs:
             image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.2
         steps:
             - name: Checkout
-              uses: actions/checkout@v2
+              uses: actions/checkout@v3
+              with:
+                ref: ${{ github.REF }}
             - name: Cache npm modules
               uses: actions/cache@v3
               if: inputs.package_manager == 'npm'
@@ -283,7 +293,9 @@ jobs:
             image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.2
         steps:
             - name: Checkout
-              uses: actions/checkout@v2
+              uses: actions/checkout@v3
+              with:
+                ref: ${{ github.REF }}
             - name: Cache npm modules
               uses: actions/cache@v3
               if: inputs.package_manager == 'npm'
@@ -324,7 +336,9 @@ jobs:
         permissions: write-all
         steps:
             - name: Checkout
-              uses: actions/checkout@v2
+              uses: actions/checkout@v3
+              with:
+                ref: ${{ github.REF }}
             - name: Docker Build project
               run: |
                 ${{ inputs.docker_build_command }}
@@ -339,7 +353,7 @@ jobs:
             image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.2
         steps:
             - name: Checkout
-              uses: actions/checkout@v2
+              uses: actions/checkout@v3
               with:
                 ref: ${{ github.REF }}
             - name: Cache npm modules
