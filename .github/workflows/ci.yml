@@ -166,7 +166,7 @@ jobs:
                 NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
             - name: generate sbom
               run: |
-                cdxgen --no-babel -o bom.xml -p
+                cdxgen --required-only --no-babel -o bom.xml -p
               env:
                 FETCH_LICENSE: true
                 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
