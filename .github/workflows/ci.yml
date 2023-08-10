@@ -23,8 +23,76 @@ on:
             lint_command:
                 type: string
                 default: "npm run lint"
+            allowedLicenses:
+                type: string
+                default: "allowed_licenses.txt"
 
 jobs:
+
+    caching:
+        name: Cache node modules
+        runs-on: ubuntu-latest
+        permissions: write-all
+        container:
+            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.2
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v3
+              with:
+                ref: ${{ github.REF }}
+            - name: Install dependencies
+              run: |
+                ${{ inputs.package_manager }} install
+              env:
+                NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+            - name: Convert lockfile version > 2 in case of npm
+              if: inputs.package_manager == 'npm'
+              run: |
+                ${{ inputs.package_manager }} install --lockfile-version 2 --package-lock-only
+              env:
+                NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+            - name: Cache npm modules
+              uses: actions/cache@v3
+              if: inputs.package_manager == 'npm'
+              with:
+                path: ~/.npm
+                key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.lock') }}
+                restore-keys: |
+                  ${{ runner.os }}-npm-
+            - name: Cache yarn modules
+              uses: actions/cache@v3
+              if: inputs.package_manager == 'yarn'
+              with:
+                path: /usr/local/share/.cache/yarn
+                key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+                restore-keys: |
+                  ${{ runner.os }}-yarn-
+            - name: Cache pnpm modules
+              uses: actions/cache@v3
+              if: inputs.package_manager == 'pnpm'
+              with:
+                path: /__w/.pnpm-store
+                key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+                restore-keys: |
+                  ${{ runner.os }}-pnpm-
+            - name: Upload package-lock
+              uses: actions/upload-artifact@v2
+              if: inputs.package_manager == 'npm'
+              with:
+                name: lockFile
+                path: package-lock.json
+            - name: Upload yarn-lock
+              uses: actions/upload-artifact@v2
+              if: inputs.package_manager == 'yarn'
+              with:
+                name: lockFile
+                path: yarn.lock
+            - name: Upload pnpm-lock
+              uses: actions/upload-artifact@v2
+              if: inputs.package_manager == 'pnpm'
+              with:
+                name: lockFile
+                path: pnpm-lock.yaml
 
     sast:
         name: SAST Scan using semgrep
@@ -32,29 +100,80 @@ jobs:
         runs-on: ubuntu-latest
         permissions: write-all
         container:
-            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.0
+            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.2
         steps:
             - name: Checkout
-              uses: actions/checkout@v2
+              uses: actions/checkout@v3
+              with:
+                ref: ${{ github.REF }}
             - name: SAST Scan
+              id : generate_report
               run: |
                 semgrep scan --config "p/default" --config /root/configs/semgrep/rules/eslint.yml --sarif > semgrep.sarif
-                cat semgrep.sarif
+
+                csvData=$(node - << EOF
+                const fs = require('fs');
+                const sarifFile = fs.readFileSync("semgrep.sarif", 'utf8');
+                const sarifData = JSON.parse(sarifFile);
+
+                const tableData = [];
+
+                for (const run of sarifData.runs) {
+                  for (const result of run.results) {
+                    let ruleId = result.ruleId.replaceAll(',',';');
+                    ruleId = ruleId.replaceAll('\n','');
+                    let message = result.message.text.replaceAll(',', ';');
+                    message = message.replaceAll('\n','');
+                    const severity = result.level;
+                    const location = result.locations[0].physicalLocation;
+                    const lineNumber = location.region.startLine;
+                    const fileName = location.artifactLocation.uri;
+                    // Add data to the tableData array
+                    tableData.push(ruleId + "|" + message +"|" + lineNumber + "|" + fileName);
+                  }
+                }                  
+                // Log the CSV data as a string
+                const csvData = tableData.join('\n');
+                console.log(csvData);
+                EOF
+                )
+
+                # Append the CSV data to the output file
+                echo 'report<<EOF' >> $GITHUB_OUTPUT
+                echo "$csvData" >> $GITHUB_OUTPUT
+                echo 'EOF' >> $GITHUB_OUTPUT
+
+            - uses: mshick/add-pr-comment@v2
+              with:
+                message-id : sast-scan
+                message:
+                  "### Semgrep Report \n
+                    Below are the issues found by semgrep: \n
+                    \n\nRule Id | Message | Line Number | File Name \n
+                    --- | --- | --- | --- \n
+                    ${{steps.generate_report.outputs.report}}\n\n
+                  "
+
     sbom:
         name: SBOM Generator using CycloneDX
         runs-on: ubuntu-latest
         permissions: write-all
+        needs: caching
         container:
-            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:1.0
+            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.2
         steps:
             - name: Checkout
-              uses: actions/checkout@v2
-            - name: Install dependencies
-              run: |
-                ${{ inputs.package_manager }} install
+              uses: actions/checkout@v3
+              with:
+                ref: ${{ github.REF }}
+            - name: Download Artifact
+              uses: actions/download-artifact@v2
+              with:
+                name: lockFile
+                path: .
             - name: generate sbom
               run: |
-                cdxgen -r --no-babel -o bom.xml -p
+                cdxgen --no-babel -o bom.xml -p
               env:
                 FETCH_LICENSE: true
                 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -72,7 +191,7 @@ jobs:
         runs-on: ubuntu-latest
         permissions: write-all
         container:
-            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:1.0
+            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.2
         steps:
             - name: Download Artifact
               uses: actions/download-artifact@v2
@@ -82,6 +201,27 @@ jobs:
             - name: OSV Scan
               run: |
                 osv-scanner --format table --sbom=bom.xml
+    licenseScan:
+        name: Executing a licenseScan using studiographene-cli
+        needs: sbom
+        if: ${{ !contains( inputs.excluded_jobs, 'licenseScan' ) && (github.actor != 'dependabot[bot]') }}
+        runs-on: ubuntu-latest
+        permissions: write-all
+        container:
+            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.2
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v3
+              with:
+                ref: ${{ github.REF }}
+            - name: Download Artifact
+              uses: actions/download-artifact@v2
+              with:
+                name: sbom
+                path: .
+            - name: License Scan
+              run: |
+                /root/executables/studiographene-ci check --sbom bom.xml --allowedLicences ${{ inputs.allowedLicenses }}
     
     gitleaks:
         name: Gitleaks scan to find secrets
@@ -103,14 +243,43 @@ jobs:
         if: ${{ !contains( inputs.excluded_jobs, 'lint' ) && (github.actor != 'dependabot[bot]') }}
         runs-on: ubuntu-latest
         permissions: write-all
+        needs: caching
         container:
-            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.0
+            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.2
         steps:
             - name: Checkout
-              uses: actions/checkout@v2
+              uses: actions/checkout@v3
+              with:
+                ref: ${{ github.REF }}
+            - name: Cache npm modules
+              uses: actions/cache@v3
+              if: inputs.package_manager == 'npm'
+              with:
+                path: ~/.npm
+                key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.lock') }}
+                restore-keys: |
+                  ${{ runner.os }}-npm-
+            - name: Cache yarn modules
+              uses: actions/cache@v3
+              if: inputs.package_manager == 'yarn'
+              with:
+                path: /usr/local/share/.cache/yarn
+                key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+                restore-keys: |
+                  ${{ runner.os }}-yarn-
+            - name: Cache pnpm modules
+              uses: actions/cache@v3
+              if: inputs.package_manager == 'pnpm'
+              with:
+                path: /__w/.pnpm-store
+                key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+                restore-keys: |
+                  ${{ runner.os }}-pnpm-
             - name: Install dependencies
               run: |
                 ${{ inputs.package_manager }} install
+              env:
+                NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
             - name: Eslint scan
               run: |
                 ${{ inputs.lint_command }}
@@ -120,14 +289,43 @@ jobs:
         if: ${{ !contains( inputs.excluded_jobs, 'build' ) && (github.actor != 'dependabot[bot]') }}
         runs-on: ubuntu-latest
         permissions: write-all
+        needs: caching
         container:
-            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:1.0
+            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.2
         steps:
             - name: Checkout
-              uses: actions/checkout@v2
+              uses: actions/checkout@v3
+              with:
+                ref: ${{ github.REF }}
+            - name: Cache npm modules
+              uses: actions/cache@v3
+              if: inputs.package_manager == 'npm'
+              with:
+                path: ~/.npm
+                key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.lock') }}
+                restore-keys: |
+                  ${{ runner.os }}-npm-
+            - name: Cache yarn modules
+              uses: actions/cache@v3
+              if: inputs.package_manager == 'yarn'
+              with:
+                path: /usr/local/share/.cache/yarn
+                key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+                restore-keys: |
+                  ${{ runner.os }}-yarn-
+            - name: Cache pnpm modules
+              uses: actions/cache@v3
+              if: inputs.package_manager == 'pnpm'
+              with:
+                path: /__w/.pnpm-store
+                key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+                restore-keys: |
+                  ${{ runner.os }}-pnpm-
             - name: Install dependencies
               run: |
                 ${{ inputs.package_manager }} install
+              env:
+                NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
             - name: Build project
               run: |
                 ${{ inputs.build_command }}
@@ -139,7 +337,9 @@ jobs:
         permissions: write-all
         steps:
             - name: Checkout
-              uses: actions/checkout@v2
+              uses: actions/checkout@v3
+              with:
+                ref: ${{ github.REF }}
             - name: Docker Build project
               run: |
                 ${{ inputs.docker_build_command }}
@@ -149,19 +349,47 @@ jobs:
         if: ${{ !contains( inputs.excluded_jobs, 'danger' ) && (github.actor != 'dependabot[bot]') }}
         runs-on: ubuntu-latest
         permissions: write-all
+        needs: caching
         container:
-            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.0
+            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.2
         steps:
             - name: Checkout
-              uses: actions/checkout@v2
+              uses: actions/checkout@v3
               with:
                 ref: ${{ github.REF }}
+            - name: Cache npm modules
+              uses: actions/cache@v3
+              if: inputs.package_manager == 'npm'
+              with:
+                path: ~/.npm
+                key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.lock') }}
+                restore-keys: |
+                  ${{ runner.os }}-npm-
+            - name: Cache yarn modules
+              uses: actions/cache@v3
+              if: inputs.package_manager == 'yarn'
+              with:
+                path: /usr/local/share/.cache/yarn
+                key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+                restore-keys: |
+                  ${{ runner.os }}-yarn-
+            - name: Cache pnpm modules
+              uses: actions/cache@v3
+              if: inputs.package_manager == 'pnpm'
+              with:
+                path: /__w/.pnpm-store
+                key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+                restore-keys: |
+                  ${{ runner.os }}-pnpm-
             - name: Install dependencies
               run: |
                 ${{ inputs.package_manager }} install
+              env:
+                NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
             - name: danger check
               run: |
                 cp /root/configs/dangerfile.ts dangerfile.ts
                 danger ci
               env:
                 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                
