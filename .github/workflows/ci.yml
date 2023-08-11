@@ -160,7 +160,7 @@ jobs:
         permissions: write-all
         needs: caching
         container:
-            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.2
+            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.3
         steps:
             - name: Checkout
               uses: actions/checkout@v3
