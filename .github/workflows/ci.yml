@@ -26,6 +26,9 @@ on:
             allowedLicenses:
                 type: string
                 default: "allowed_licenses.txt"
+            semgrep_options:
+                type: string
+                default: ""
 
 jobs:
 
@@ -109,7 +112,7 @@ jobs:
             - name: SAST Scan
               id : generate_report
               run: |
-                semgrep scan --config "p/default" --config /root/configs/semgrep/rules/eslint.yml --sarif > semgrep.sarif
+                semgrep scan --config "p/default" --config /root/configs/semgrep/rules/eslint.yml --sarif ${{ inputs.semgrep_options }} > semgrep.sarif
 
                 csvData=$(node - << EOF
                 const fs = require('fs');
