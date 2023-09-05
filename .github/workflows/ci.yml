@@ -203,7 +203,7 @@ jobs:
                 path: .
             - name: OSV Scan
               run: |
-                osv-scanner --format table --config=/root/config/osv/config.toml --sbom=bom.xml
+                osv-scanner --format table --config=/root/configs/osv/config.toml --sbom=bom.xml
     licenseScan:
         name: Executing a licenseScan using studiographene-cli
         needs: sbom
