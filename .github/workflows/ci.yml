@@ -194,7 +194,7 @@ jobs:
         runs-on: ubuntu-latest
         permissions: write-all
         container:
-            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.2
+            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.5
         steps:
             - name: Download Artifact
               uses: actions/download-artifact@v2
@@ -203,7 +203,7 @@ jobs:
                 path: .
             - name: OSV Scan
               run: |
-                osv-scanner --format table --sbom=bom.xml
+                osv-scanner --format table --config=/root/config/osv/config.toml --sbom=bom.xml
     licenseScan:
         name: Executing a licenseScan using studiographene-cli
         needs: sbom
