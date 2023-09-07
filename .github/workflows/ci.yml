@@ -224,34 +224,8 @@ jobs:
                 path: .
             - name: License Scan
               run: |
-                /root/executables/studiographene-ci check --sbom bom.xml --allowedLicences ${{ inputs.allowedLicenses }} > license-report.txt
-
-            - name: Read License Report
-              id: read_license_report
-              run: |
-                echo 'license_report<<EOF' >> $GITHUB_OUTPUT
-                echo "$(cat license-report.txt | sed '/COMPLIANCE STATUS/ s/$/\n--- | ---/' | sed '/NON-COMPLIANT PACKAGES/ s/$/\n-- | ---/' |  grep -v '+---')" >> $GITHUB_OUTPUT
-                echo 'EOF' >> $GITHUB_OUTPUT
-
-                echo "is_compliant=$(grep -q '❌' license-report.txt && echo "FALSE" || echo "TRUE" )" >> $GITHUB_OUTPUT
-
-            - uses: mshick/add-pr-comment@7c0890544fb33b0bdd2e59467fbacb62e028a096
-              with:
-                message:
-                  "### License compliance Report \n
-                  ${{steps.read_license_report.outputs.license_report}}"
-
-            - name: pass or fail
-              id: check
-              run: 
-                if [[ ${{ steps.read_license_report.outputs.is_compliant }} == "TRUE" ]]; 
-                then
-                  echo "Success";
-                  exit 0;
-                else
-                  echo "Some libraries are not compliant";
-                  exit 1;
-                fi
+                /root/executables/studiographene-ci check --sbom bom.xml --allowedLicences ${{ inputs.allowedLicenses }}
+    
     gitleaks:
         name: Gitleaks scan to find secrets
         if: ${{ !contains( inputs.excluded_jobs, 'gitleaks' ) && (github.actor != 'dependabot[bot]') }}
