@@ -226,7 +226,7 @@ jobs:
               run: |
                 /root/executables/studiographene-ci check --sbom bom.xml --allowedLicences ${{ inputs.allowedLicenses }}
               env:
-                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                 PR_NUMBER: ${{ github.event.number }}
                 PROJECT_NAME: ${{ github.event.repository.name }}
                 PROJECT_OWNER: ${{ github.repository_owner }}
