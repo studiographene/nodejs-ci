@@ -7,8 +7,6 @@ name: studiographene-ci
 
 on:
   pull_request: {}
-  push:
-    branches: ["master", "main", "dev"]
   workflow_dispatch:
 
 jobs:
@@ -25,6 +23,7 @@ jobs:
 ```
 
 There are a few parametes that can be set as custom inputs (in the with section):
+
 - project_name:  name of the project
 - excluded_jobs: A string of jobs that you want to exculude. For multiple, send the jobs comma seperated.
 - package_manager: default is npm
@@ -34,6 +33,7 @@ There are a few parametes that can be set as custom inputs (in the with section)
 - lint_command: lint command for the project
 
 All jobs that are running:
+
 - sast
 - osv
 - gitleaks
