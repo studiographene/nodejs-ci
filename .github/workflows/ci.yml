@@ -194,7 +194,7 @@ jobs:
         runs-on: ubuntu-latest
         permissions: write-all
         container:
-            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.5
+            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.7
         steps:
             - name: Download Artifact
               uses: actions/download-artifact@v2
@@ -346,6 +346,8 @@ jobs:
             - name: Docker Build project
               run: |
                 ${{ inputs.docker_build_command }}
+              env:
+                NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     
     danger:
         name: run danger check
