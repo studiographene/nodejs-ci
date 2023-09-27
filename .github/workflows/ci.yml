@@ -211,7 +211,7 @@ jobs:
         runs-on: ubuntu-latest
         permissions: write-all
         container:
-            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.5
+            image: public.ecr.aws/u6u3h0g1/docker-nodejs-ci:2.8
         steps:
             - name: Checkout
               uses: actions/checkout@v3
@@ -226,7 +226,7 @@ jobs:
               run: |
                 /root/executables/studiographene-ci check --sbom bom.xml --allowedLicences ${{ inputs.allowedLicenses }}
               env:
-                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                 PR_NUMBER: ${{ github.event.number }}
                 PROJECT_NAME: ${{ github.event.repository.name }}
                 PROJECT_OWNER: ${{ github.repository_owner }}
