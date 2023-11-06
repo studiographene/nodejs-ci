@@ -176,7 +176,7 @@ jobs:
                 path: .
             - name: generate sbom
               run: |
-                cdxgen -r --no-babel -o bom.xml -p
+                cdxgen --no-recurse -o bom.xml -p
               env:
                 FETCH_LICENSE: true
                 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
