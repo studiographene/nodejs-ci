@@ -29,6 +29,11 @@ on:
             semgrep_options:
                 type: string
                 default: ""
+            run_pr_agent:
+                type: string
+                default: "no"
+
+
 
 jobs:
 
@@ -396,4 +401,16 @@ jobs:
                 cp /root/configs/dangerfile.ts dangerfile.ts
                 danger ci
               env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      pr_agent_job:
+          name: Run pr agent on every pull request, respond to user comments
+          if: ${{ ( inputs.run_pr_agent == 'yes' ) && (github.actor != 'dependabot[bot]') }}
+          runs-on: ubuntu-latest
+          steps:
+            - name: PR Agent action step
+              id: pragent
+              uses: Codium-ai/pr-agent@main
+              env:
+                OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
                 GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

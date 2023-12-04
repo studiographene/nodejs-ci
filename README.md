@@ -31,6 +31,7 @@ There are a few parametes that can be set as custom inputs (in the with section)
 - build_command: build command for the project
 - docker_build_command: Docker build command
 - lint_command: lint command for the project
+- run_pr_agent: yes|no Defaut value is no
 
 All jobs that are running:
 
