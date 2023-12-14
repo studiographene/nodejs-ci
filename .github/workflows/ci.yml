@@ -1,416 +1,412 @@
 name: studiographene-ci
 on:
-    workflow_call:
-        inputs:
-            project_name:
-                type: string
-                default: "sg-ci"
-            excluded_jobs:
-                type: string
-                default: ""
-            package_manager:
-                type: string
-                default: "npm"
-            npm_token:
-                type: string
-                default: ""
-            build_command:
-                type: string
-                default: "npm run build"
-            docker_build_command:
-                type: string
-                default: "docker build -t local:latest ."
-            lint_command:
-                type: string
-                default: "npm run lint"
-            allowedLicenses:
-                type: string
-                default: "allowed_licenses.txt"
-            semgrep_options:
-                type: string
-                default: ""
-            run_pr_agent:
-                type: string
-                default: "no"
-
-
+  workflow_call:
+    inputs:
+      project_name:
+        type: string
+        default: "sg-ci"
+      excluded_jobs:
+        type: string
+        default: ""
+      package_manager:
+        type: string
+        default: "npm"
+      npm_token:
+        type: string
+        default: ""
+      build_command:
+        type: string
+        default: "npm run build"
+      docker_build_command:
+        type: string
+        default: "docker build -t local:latest ."
+      lint_command:
+        type: string
+        default: "npm run lint"
+      allowedLicenses:
+        type: string
+        default: "allowed_licenses.txt"
+      semgrep_options:
+        type: string
+        default: ""
+      run_pr_agent:
+        type: string
+        default: "no"
 
 jobs:
+  caching:
+    name: Cache node modules
+    runs-on: ubuntu-latest
+    permissions: write-all
+    container:
+      image: public.ecr.aws/studiographene/ci:node-20-alpine
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.REF }}
+      - name: Install dependencies
+        run: |
+          ${{ inputs.package_manager }} install
+        env:
+          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Convert lockfile version > 2 in case of npm
+        if: inputs.package_manager == 'npm'
+        run: |
+          ${{ inputs.package_manager }} install --lockfile-version 2 --package-lock-only
+        env:
+          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Cache npm modules
+        uses: actions/cache@v3
+        if: inputs.package_manager == 'npm'
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+      - name: Cache yarn modules
+        uses: actions/cache@v3
+        if: inputs.package_manager == 'yarn'
+        with:
+          path: /usr/local/share/.cache/yarn
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+      - name: Cache pnpm modules
+        uses: actions/cache@v3
+        if: inputs.package_manager == 'pnpm'
+        with:
+          path: /__w/.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+      - name: Upload package-lock
+        uses: actions/upload-artifact@v2
+        if: inputs.package_manager == 'npm'
+        with:
+          name: lockFile
+          path: package-lock.json
+      - name: Upload yarn-lock
+        uses: actions/upload-artifact@v2
+        if: inputs.package_manager == 'yarn'
+        with:
+          name: lockFile
+          path: yarn.lock
+      - name: Upload pnpm-lock
+        uses: actions/upload-artifact@v2
+        if: inputs.package_manager == 'pnpm'
+        with:
+          name: lockFile
+          path: pnpm-lock.yaml
 
-    caching:
-        name: Cache node modules
-        runs-on: ubuntu-latest
-        permissions: write-all
-        container:
-            image: public.ecr.aws/studiographene/ci:node-20-alpine
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v3
-              with:
-                ref: ${{ github.REF }}
-            - name: Install dependencies
-              run: |
-                ${{ inputs.package_manager }} install
-              env:
-                NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-            - name: Convert lockfile version > 2 in case of npm
-              if: inputs.package_manager == 'npm'
-              run: |
-                ${{ inputs.package_manager }} install --lockfile-version 2 --package-lock-only
-              env:
-                NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-            - name: Cache npm modules
-              uses: actions/cache@v3
-              if: inputs.package_manager == 'npm'
-              with:
-                path: ~/.npm
-                key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.lock') }}
-                restore-keys: |
-                  ${{ runner.os }}-npm-
-            - name: Cache yarn modules
-              uses: actions/cache@v3
-              if: inputs.package_manager == 'yarn'
-              with:
-                path: /usr/local/share/.cache/yarn
-                key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-                restore-keys: |
-                  ${{ runner.os }}-yarn-
-            - name: Cache pnpm modules
-              uses: actions/cache@v3
-              if: inputs.package_manager == 'pnpm'
-              with:
-                path: /__w/.pnpm-store
-                key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
-                restore-keys: |
-                  ${{ runner.os }}-pnpm-
-            - name: Upload package-lock
-              uses: actions/upload-artifact@v2
-              if: inputs.package_manager == 'npm'
-              with:
-                name: lockFile
-                path: package-lock.json
-            - name: Upload yarn-lock
-              uses: actions/upload-artifact@v2
-              if: inputs.package_manager == 'yarn'
-              with:
-                name: lockFile
-                path: yarn.lock
-            - name: Upload pnpm-lock
-              uses: actions/upload-artifact@v2
-              if: inputs.package_manager == 'pnpm'
-              with:
-                name: lockFile
-                path: pnpm-lock.yaml
+  sast:
+    name: SAST Scan using semgrep
+    if: ${{ !contains( inputs.excluded_jobs, 'sast' ) && (github.actor != 'dependabot[bot]') }}
+    runs-on: ubuntu-latest
+    permissions: write-all
+    container:
+      image: public.ecr.aws/studiographene/ci:node-20-alpine
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.REF }}
+      - name: SAST Scan
+        id: generate_report
+        run: |
+          semgrep scan --config "p/default" --config /root/configs/semgrep/rules/eslint.v1.3.32.yml --sarif ${{ inputs.semgrep_options }} > semgrep.sarif
 
-    sast:
-        name: SAST Scan using semgrep
-        if: ${{ !contains( inputs.excluded_jobs, 'sast' ) && (github.actor != 'dependabot[bot]') }}
-        runs-on: ubuntu-latest
-        permissions: write-all
-        container:
-            image: public.ecr.aws/studiographene/ci:node-20-alpine
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v3
-              with:
-                ref: ${{ github.REF }}
-            - name: SAST Scan
-              id : generate_report
-              run: |
-                semgrep scan --config "p/default" --config /root/configs/semgrep/rules/eslint.v1.3.32.yml --sarif ${{ inputs.semgrep_options }} > semgrep.sarif
+          csvData=$(node - << EOF
+          const fs = require('fs');
+          const sarifFile = fs.readFileSync("semgrep.sarif", 'utf8');
+          const sarifData = JSON.parse(sarifFile);
 
-                csvData=$(node - << EOF
-                const fs = require('fs');
-                const sarifFile = fs.readFileSync("semgrep.sarif", 'utf8');
-                const sarifData = JSON.parse(sarifFile);
+          const tableData = [];
 
-                const tableData = [];
+          for (const run of sarifData.runs) {
+            for (const result of run.results) {
+              let ruleId = result.ruleId.replaceAll(',',';');
+              ruleId = ruleId.replaceAll('\n','');
+              let message = result.message.text.replaceAll(',', ';');
+              message = message.replaceAll('\n','');
+              const severity = result.level;
+              const location = result.locations[0].physicalLocation;
+              const lineNumber = location.region.startLine;
+              const fileName = location.artifactLocation.uri;
+              // Add data to the tableData array
+              tableData.push(ruleId + "|" + message +"|" + lineNumber + "|" + fileName);
+            }
+          }                  
+          // Log the CSV data as a string
+          const csvData = tableData.join('\n');
+          console.log(csvData);
+          EOF
+          )
 
-                for (const run of sarifData.runs) {
-                  for (const result of run.results) {
-                    let ruleId = result.ruleId.replaceAll(',',';');
-                    ruleId = ruleId.replaceAll('\n','');
-                    let message = result.message.text.replaceAll(',', ';');
-                    message = message.replaceAll('\n','');
-                    const severity = result.level;
-                    const location = result.locations[0].physicalLocation;
-                    const lineNumber = location.region.startLine;
-                    const fileName = location.artifactLocation.uri;
-                    // Add data to the tableData array
-                    tableData.push(ruleId + "|" + message +"|" + lineNumber + "|" + fileName);
-                  }
-                }                  
-                // Log the CSV data as a string
-                const csvData = tableData.join('\n');
-                console.log(csvData);
-                EOF
-                )
+          # Append the CSV data to the output file
+          echo 'report<<EOF' >> $GITHUB_OUTPUT
+          echo "$csvData" >> $GITHUB_OUTPUT
+          echo 'EOF' >> $GITHUB_OUTPUT
 
-                # Append the CSV data to the output file
-                echo 'report<<EOF' >> $GITHUB_OUTPUT
-                echo "$csvData" >> $GITHUB_OUTPUT
-                echo 'EOF' >> $GITHUB_OUTPUT
+      - uses: mshick/add-pr-comment@v2
+        with:
+          message-id: sast-scan
+          message: "### Semgrep Report \n
+            Below are the issues found by semgrep: \n
+            \n\nRule Id | Message | Line Number | File Name \n
+            --- | --- | --- | --- \n
+            ${{steps.generate_report.outputs.report}}\n\n
+            "
 
-            - uses: mshick/add-pr-comment@v2
-              with:
-                message-id : sast-scan
-                message:
-                  "### Semgrep Report \n
-                    Below are the issues found by semgrep: \n
-                    \n\nRule Id | Message | Line Number | File Name \n
-                    --- | --- | --- | --- \n
-                    ${{steps.generate_report.outputs.report}}\n\n
-                  "
+  sbom:
+    name: SBOM Generator using CycloneDX
+    runs-on: ubuntu-latest
+    permissions: write-all
+    needs: caching
+    container:
+      image: public.ecr.aws/studiographene/ci:node-20-alpine
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.REF }}
+      - name: Download Artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: lockFile
+          path: .
+      - name: generate sbom
+        run: |
+          cdxgen --no-recurse -o bom.xml -p
+        env:
+          FETCH_LICENSE: true
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CDXGEN_DEBUG_MODE: debug
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: sbom
+          path: bom.xml
 
-    sbom:
-        name: SBOM Generator using CycloneDX
-        runs-on: ubuntu-latest
-        permissions: write-all
-        needs: caching
-        container:
-            image: public.ecr.aws/studiographene/ci:node-20-alpine
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v3
-              with:
-                ref: ${{ github.REF }}
-            - name: Download Artifact
-              uses: actions/download-artifact@v2
-              with:
-                name: lockFile
-                path: .
-            - name: generate sbom
-              run: |
-                cdxgen --no-recurse -o bom.xml -p
-              env:
-                FETCH_LICENSE: true
-                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-                CDXGEN_DEBUG_MODE: debug
-            - name: Upload Artifact
-              uses: actions/upload-artifact@v2
-              with:
-                name: sbom
-                path: bom.xml
+  osv:
+    name: OSV/Dependency Scan using Google OSV
+    needs: sbom
+    if: ${{ !contains( inputs.excluded_jobs, 'osv' ) && (github.actor != 'dependabot[bot]') }}
+    runs-on: ubuntu-latest
+    permissions: write-all
+    container:
+      image: public.ecr.aws/studiographene/ci:node-20-alpine
+    steps:
+      - name: Download Artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: sbom
+          path: .
+      - name: OSV Scan
+        run: |
+          osv-scanner --format table --config=/root/configs/osv/config.toml --sbom=bom.xml
+  licenseScan:
+    name: Executing a licenseScan using studiographene-cli
+    needs: sbom
+    if: ${{ !contains( inputs.excluded_jobs, 'licenseScan' ) && (github.actor != 'dependabot[bot]') }}
+    runs-on: ubuntu-latest
+    permissions: write-all
+    container:
+      image: public.ecr.aws/studiographene/ci:node-20-alpine
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.REF }}
+      - name: Download Artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: sbom
+          path: .
+      - name: License Scan
+        run: |
+          /root/executables/ci-utils check --sbom bom.xml --allowedLicences ${{ inputs.allowedLicenses }}
 
-    osv:
-        name: OSV/Dependency Scan using Google OSV
-        needs: sbom
-        if: ${{ !contains( inputs.excluded_jobs, 'osv' ) && (github.actor != 'dependabot[bot]') }}
-        runs-on: ubuntu-latest
-        permissions: write-all
-        container:
-            image: public.ecr.aws/studiographene/ci:node-20-alpine
-        steps:
-            - name: Download Artifact
-              uses: actions/download-artifact@v2
-              with:
-                name: sbom
-                path: .
-            - name: OSV Scan
-              run: |
-                osv-scanner --format table --config=/root/configs/osv/config.toml --sbom=bom.xml
-    licenseScan:
-        name: Executing a licenseScan using studiographene-cli
-        needs: sbom
-        if: ${{ !contains( inputs.excluded_jobs, 'licenseScan' ) && (github.actor != 'dependabot[bot]') }}
-        runs-on: ubuntu-latest
-        permissions: write-all
-        container:
-            image: public.ecr.aws/studiographene/ci:node-20-alpine
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v3
-              with:
-                ref: ${{ github.REF }}
-            - name: Download Artifact
-              uses: actions/download-artifact@v2
-              with:
-                name: sbom
-                path: .
-            - name: License Scan
-              run: |
-                /root/executables/studiographene-ci check --sbom bom.xml --allowedLicences ${{ inputs.allowedLicenses }}
-    
-    gitleaks:
-        name: Gitleaks scan to find secrets
-        if: ${{ !contains( inputs.excluded_jobs, 'gitleaks' ) && (github.actor != 'dependabot[bot]') }}
-        runs-on: ubuntu-latest
-        permissions: write-all
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v3
-              with:
-                fetch-depth: 0
-            - name: Gitleaks scan
-              uses:  gitleaks/gitleaks-action@v1.6.0
-              env:
-                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    
-    lint:
-        name: eslint scan to find linting issues
-        if: ${{ !contains( inputs.excluded_jobs, 'lint' ) && (github.actor != 'dependabot[bot]') }}
-        runs-on: ubuntu-latest
-        permissions: write-all
-        needs: caching
-        container:
-            image: public.ecr.aws/studiographene/ci:node-20-alpine
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v3
-              with:
-                ref: ${{ github.REF }}
-            - name: Cache npm modules
-              uses: actions/cache@v3
-              if: inputs.package_manager == 'npm'
-              with:
-                path: ~/.npm
-                key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.lock') }}
-                restore-keys: |
-                  ${{ runner.os }}-npm-
-            - name: Cache yarn modules
-              uses: actions/cache@v3
-              if: inputs.package_manager == 'yarn'
-              with:
-                path: /usr/local/share/.cache/yarn
-                key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-                restore-keys: |
-                  ${{ runner.os }}-yarn-
-            - name: Cache pnpm modules
-              uses: actions/cache@v3
-              if: inputs.package_manager == 'pnpm'
-              with:
-                path: /__w/.pnpm-store
-                key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
-                restore-keys: |
-                  ${{ runner.os }}-pnpm-
-            - name: Install dependencies
-              run: |
-                ${{ inputs.package_manager }} install
-              env:
-                NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-            - name: Eslint scan
-              run: |
-                ${{ inputs.lint_command }}
-    
-    build:
-        name: project build check
-        if: ${{ !contains( inputs.excluded_jobs, 'build' ) && (github.actor != 'dependabot[bot]') }}
-        runs-on: ubuntu-latest
-        permissions: write-all
-        needs: caching
-        container:
-            image: public.ecr.aws/studiographene/ci:node-20-alpine
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v3
-              with:
-                ref: ${{ github.REF }}
-            - name: Cache npm modules
-              uses: actions/cache@v3
-              if: inputs.package_manager == 'npm'
-              with:
-                path: ~/.npm
-                key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.lock') }}
-                restore-keys: |
-                  ${{ runner.os }}-npm-
-            - name: Cache yarn modules
-              uses: actions/cache@v3
-              if: inputs.package_manager == 'yarn'
-              with:
-                path: /usr/local/share/.cache/yarn
-                key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-                restore-keys: |
-                  ${{ runner.os }}-yarn-
-            - name: Cache pnpm modules
-              uses: actions/cache@v3
-              if: inputs.package_manager == 'pnpm'
-              with:
-                path: /__w/.pnpm-store
-                key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
-                restore-keys: |
-                  ${{ runner.os }}-pnpm-
-            - name: Install dependencies
-              run: |
-                ${{ inputs.package_manager }} install
-              env:
-                NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-            - name: Build project
-              run: |
-                ${{ inputs.build_command }}
+  gitleaks:
+    name: Gitleaks scan to find secrets
+    if: ${{ !contains( inputs.excluded_jobs, 'gitleaks' ) && (github.actor != 'dependabot[bot]') }}
+    runs-on: ubuntu-latest
+    permissions: write-all
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Gitleaks scan
+        uses: gitleaks/gitleaks-action@v1.6.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-    docker:
-        name: Docker build check
-        if: ${{ !contains( inputs.excluded_jobs, 'docker' ) && (github.actor != 'dependabot[bot]') }}
-        runs-on: ubuntu-latest
-        permissions: write-all
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v3
-              with:
-                ref: ${{ github.REF }}
-            - name: Docker Build project
-              run: |
-                ${{ inputs.docker_build_command }}
-              env:
-                NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    
-    danger:
-        name: run danger check
-        if: ${{ !contains( inputs.excluded_jobs, 'danger' ) && (github.actor != 'dependabot[bot]') }}
-        runs-on: ubuntu-latest
-        permissions: write-all
-        needs: caching
-        container:
-            image: public.ecr.aws/studiographene/ci:node-20-alpine
-        steps:
-            - name: Checkout
-              uses: actions/checkout@v3
-              with:
-                ref: ${{ github.REF }}
-            - name: Cache npm modules
-              uses: actions/cache@v3
-              if: inputs.package_manager == 'npm'
-              with:
-                path: ~/.npm
-                key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.lock') }}
-                restore-keys: |
-                  ${{ runner.os }}-npm-
-            - name: Cache yarn modules
-              uses: actions/cache@v3
-              if: inputs.package_manager == 'yarn'
-              with:
-                path: /usr/local/share/.cache/yarn
-                key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-                restore-keys: |
-                  ${{ runner.os }}-yarn-
-            - name: Cache pnpm modules
-              uses: actions/cache@v3
-              if: inputs.package_manager == 'pnpm'
-              with:
-                path: /__w/.pnpm-store
-                key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
-                restore-keys: |
-                  ${{ runner.os }}-pnpm-
-            - name: Install dependencies
-              run: |
-                ${{ inputs.package_manager }} install
-              env:
-                NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-            - name: danger check
-              run: |
-                cp /root/configs/dangerfile.ts dangerfile.ts
-                danger ci
-              env:
-                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  lint:
+    name: eslint scan to find linting issues
+    if: ${{ !contains( inputs.excluded_jobs, 'lint' ) && (github.actor != 'dependabot[bot]') }}
+    runs-on: ubuntu-latest
+    permissions: write-all
+    needs: caching
+    container:
+      image: public.ecr.aws/studiographene/ci:node-20-alpine
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.REF }}
+      - name: Cache npm modules
+        uses: actions/cache@v3
+        if: inputs.package_manager == 'npm'
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+      - name: Cache yarn modules
+        uses: actions/cache@v3
+        if: inputs.package_manager == 'yarn'
+        with:
+          path: /usr/local/share/.cache/yarn
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+      - name: Cache pnpm modules
+        uses: actions/cache@v3
+        if: inputs.package_manager == 'pnpm'
+        with:
+          path: /__w/.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+      - name: Install dependencies
+        run: |
+          ${{ inputs.package_manager }} install
+        env:
+          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Eslint scan
+        run: |
+          ${{ inputs.lint_command }}
 
-    pr_agent_job:
-        name: Run pr agent on every pull request, respond to user comments
-        if: ${{ ( inputs.run_pr_agent == 'yes' ) && (github.actor != 'dependabot[bot]') }}
-        runs-on: ubuntu-latest
-        steps:
-            - name: PR Agent action step
-              id: pragent
-              uses: Codium-ai/pr-agent@main
-              env:
-                OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
-                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  build:
+    name: project build check
+    if: ${{ !contains( inputs.excluded_jobs, 'build' ) && (github.actor != 'dependabot[bot]') }}
+    runs-on: ubuntu-latest
+    permissions: write-all
+    needs: caching
+    container:
+      image: public.ecr.aws/studiographene/ci:node-20-alpine
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.REF }}
+      - name: Cache npm modules
+        uses: actions/cache@v3
+        if: inputs.package_manager == 'npm'
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+      - name: Cache yarn modules
+        uses: actions/cache@v3
+        if: inputs.package_manager == 'yarn'
+        with:
+          path: /usr/local/share/.cache/yarn
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+      - name: Cache pnpm modules
+        uses: actions/cache@v3
+        if: inputs.package_manager == 'pnpm'
+        with:
+          path: /__w/.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+      - name: Install dependencies
+        run: |
+          ${{ inputs.package_manager }} install
+        env:
+          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build project
+        run: |
+          ${{ inputs.build_command }}
+
+  docker:
+    name: Docker build check
+    if: ${{ !contains( inputs.excluded_jobs, 'docker' ) && (github.actor != 'dependabot[bot]') }}
+    runs-on: ubuntu-latest
+    permissions: write-all
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.REF }}
+      - name: Docker Build project
+        run: |
+          ${{ inputs.docker_build_command }}
+        env:
+          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  danger:
+    name: run danger check
+    if: ${{ !contains( inputs.excluded_jobs, 'danger' ) && (github.actor != 'dependabot[bot]') }}
+    runs-on: ubuntu-latest
+    permissions: write-all
+    needs: caching
+    container:
+      image: public.ecr.aws/studiographene/ci:node-20-alpine
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.REF }}
+      - name: Cache npm modules
+        uses: actions/cache@v3
+        if: inputs.package_manager == 'npm'
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-npm-
+      - name: Cache yarn modules
+        uses: actions/cache@v3
+        if: inputs.package_manager == 'yarn'
+        with:
+          path: /usr/local/share/.cache/yarn
+          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-
+      - name: Cache pnpm modules
+        uses: actions/cache@v3
+        if: inputs.package_manager == 'pnpm'
+        with:
+          path: /__w/.pnpm-store
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-
+      - name: Install dependencies
+        run: |
+          ${{ inputs.package_manager }} install
+        env:
+          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: danger check
+        run: |
+          cp /root/configs/dangerfile.ts dangerfile.ts
+          danger ci
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  pr_agent_job:
+    name: Run pr agent on every pull request, respond to user comments
+    if: ${{ ( inputs.run_pr_agent == 'yes' ) && (github.actor != 'dependabot[bot]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: PR Agent action step
+        id: pragent
+        uses: Codium-ai/pr-agent@main
+        env:
+          OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
