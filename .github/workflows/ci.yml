@@ -225,7 +225,7 @@ jobs:
           path: .
       - name: License Scan
         run: |
-          /root/executables/ci-utils check --sbom bom.xml --allowedLicences ${{ inputs.allowedLicenses }}
+          /root/executables/ci-utility check --sbom bom.xml --allowedLicences ${{ inputs.allowedLicenses }}
 
   gitleaks:
     name: Gitleaks scan to find secrets
