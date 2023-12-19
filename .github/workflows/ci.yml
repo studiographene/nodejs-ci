@@ -399,7 +399,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  pr_agent_job:
+  pr_agent:
     name: Run pr agent on every pull request, respond to user comments
     if: ${{ ( inputs.run_pr_agent == 'yes' ) && (github.actor != 'dependabot[bot]') }}
     runs-on: ubuntu-latest
