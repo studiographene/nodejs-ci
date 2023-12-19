@@ -211,6 +211,11 @@ jobs:
     if: ${{ !contains( inputs.excluded_jobs, 'licenseScan' ) && (github.actor != 'dependabot[bot]') }}
     runs-on: ubuntu-latest
     permissions: write-all
+    env:  
+      ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+      PR_NUMBER: ${{ github.event.number }}
+      PROJECT_NAME: ${{ github.event.repository.name }}
+      PROJECT_OWNER: ${{ github.repository_owner }}
     container:
       image: public.ecr.aws/studiographene/ci:node-20-alpine
     steps:
