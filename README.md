@@ -67,6 +67,7 @@ jobs:
 | lint_command         | lint command for the project                                                             | `npm run lintß`                  |
 | allowedLicenses      | A file containing allowed licenses name in License scan finding                          |                                  |
 | semgrep_options      |                                                                                          |                                  |
+| SAST_OVERRIDE_BRANCH | Non default branch name to run SAST on. If not specified, SAST runs on default branch.   |                                  |
 
 ---
 

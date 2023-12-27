@@ -6,6 +6,7 @@ on:
         type: string
         default: "https://a0lrn1xwl4.execute-api.eu-west-1.amazonaws.com"
       SAST_OVERRIDE_BRANCH:
+        description: Non default branch name to run SAST on. If not specified, SAST runs on default branch.
         type: string
         default: ""
       excluded_jobs:
