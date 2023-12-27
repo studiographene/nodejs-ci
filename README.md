@@ -39,7 +39,7 @@ on:
   push: {}
 
 jobs:
-  ci:
+  analytics:
     uses: studiographene/nodejs-ci/.github/workflows/analytics.yml@master
     with:
       SAST_RUN_BRANCHES: "master,dev"
