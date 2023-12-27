@@ -2,9 +2,6 @@ name: studiographene-ci
 on:
   workflow_call:
     inputs:
-      project_name:
-        type: string
-        default: "sg-ci"
       excluded_jobs:
         type: string
         default: ""
