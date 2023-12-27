@@ -125,7 +125,7 @@ jobs:
           echo "$nested_info"
 
           # Make a POST request with the $dep_info JSON object as the body
-          curl -X POST -H "Content-Type: application/json" -d "$nested_info" "https://0bnrigh465.execute-api.eu-west-1.amazonaws.com/github/repo-libraries"
+          curl -X POST -H "Content-Type: application/json" -d "$nested_info" "https://a0lrn1xwl4.execute-api.eu-west-1.amazonaws.com/github/repo-libraries"
 
       - name: after step
         if: ${{ inputs.dependencies_report_pulse_after_step_command != '' }}
@@ -165,7 +165,7 @@ jobs:
           # Write the data to a JSON file
           echo "No. of error findings: $data"
           echo "$data" > sast_errors.json
-          url="https://0bnrigh465.execute-api.eu-west-1.amazonaws.com/github/repo-sast-errors"
+          url="https://a0lrn1xwl4.execute-api.eu-west-1.amazonaws.com/github/repo-sast-errors"
           content_type="application/json"  # Set your content type
 
           # Send the request
