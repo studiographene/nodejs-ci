@@ -35,7 +35,7 @@ on:
 jobs:
   dependencies_report_pulse:
     name: Dependencies report feed to Pulse
-    if: ${{ !contains( inputs.excluded_jobs, 'dependencies_report_pulse') }} && ("${GITHUB_REF_NAME}" == inputs.DEP_REPORT_RUN_BRANCH) && (github.actor != 'dependabot[bot]')
+    if: ${{ !contains( inputs.excluded_jobs, 'dependencies_report_pulse' ) }} && (${GITHUB_REF_NAME} == ${{ inputs.DEP_REPORT_RUN_BRANCH }}) && (github.actor != 'dependabot[bot]')
     runs-on: ubuntu-latest
     container:
       image: public.ecr.aws/studiographene/ci:node-20-alpine
@@ -148,7 +148,7 @@ jobs:
 
   sast_report_pulse:
     name: SAST report feed to Pulse
-    if: ${{ !contains( inputs.excluded_jobs, 'sast_report_pulse' ) }} && contains( inputs.SAST_RUN_BRANCHES, "${GITHUB_REF_NAME}") && (github.actor != 'dependabot[bot]')
+    if: ${{ !contains( inputs.excluded_jobs, 'sast_report_pulse' ) }} && contains( ${{ inputs.SAST_RUN_BRANCHES }}, "${GITHUB_REF_NAME}") && (github.actor != 'dependabot[bot]')
     runs-on: ubuntu-latest
     container:
       image: public.ecr.aws/studiographene/ci:node-20-alpine
