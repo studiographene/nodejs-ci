@@ -21,7 +21,6 @@ jobs:
   ci:
     uses: studiographene/nodejs-ci/.github/workflows/ci.yml@master
     with:
-      project_name: microservice-boilerplate
       package_manager: pnpm
       build_command: pnpm run build
       lint_command: pnpm run lint
@@ -54,9 +53,9 @@ jobs:
 
 ### Required:
 
-| Name         | Description              |
-| ------------ | ------------------------ |
-| project_name | The project/product name |
+| Name | Description |
+| ---- | ----------- |
+|      |             |
 
 ### Optional:
 
