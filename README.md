@@ -4,7 +4,7 @@ CI scans workflows for NodeJS based projects. Following is the sample code of th
 
 ## How To Use:
 
-Create 2 workflow files under directory `.github/workflows` with below content:
+Create 2 workflow files under directory `.github/workflows` with below content (change the inputs as required):
 
 - ci.yml
 - analytics.yml
@@ -41,6 +41,9 @@ on:
 jobs:
   ci:
     uses: studiographene/nodejs-ci/.github/workflows/analytics.yml@master
+    with:
+      SAST_RUN_BRANCHES: "master,dev"
+      DEP_REPORT_RUN_BRANCH: "master"
     secrets: inherit
     permissions: write-all
 ```
@@ -57,17 +60,18 @@ jobs:
 
 ### Optional:
 
-| Name                 | Description                                                                              | Default                          |
-| -------------------- | ---------------------------------------------------------------------------------------- | -------------------------------- |
-| excluded_jobs        | A string of jobs that you want to exculude. For multiple, send the jobs comma seperated. |                                  |
-| package_manager      |                                                                                          | npm                              |
-| npm_token            | NPM token                                                                                |                                  |
-| build_command        | build command for the project                                                            | `npm run build``                 |
-| docker_build_command | Docker build command                                                                     | `docker build -t local:latest .` |
-| lint_command         | lint command for the project                                                             | `npm run lintß`                  |
-| allowedLicenses      | A file containing allowed licenses name in License scan finding                          |                                  |
-| semgrep_options      |                                                                                          |                                  |
-| SAST_OVERRIDE_BRANCH | Non default branch name to run SAST on. If not specified, SAST runs on default branch.   |                                  |
+| Name                  | Description                                                                              | Default                          |
+| --------------------- | ---------------------------------------------------------------------------------------- | -------------------------------- |
+| excluded_jobs         | A string of jobs that you want to exculude. For multiple, send the jobs comma seperated. |                                  |
+| package_manager       |                                                                                          | npm                              |
+| npm_token             | NPM token                                                                                |                                  |
+| build_command         | build command for the project                                                            | `npm run build``                 |
+| docker_build_command  | Docker build command                                                                     | `docker build -t local:latest .` |
+| lint_command          | lint command for the project                                                             | `npm run lintß`                  |
+| allowedLicenses       | A file containing allowed licenses name in License scan finding                          |                                  |
+| semgrep_options       |                                                                                          |                                  |
+| SAST_RUN_BRANCHES     | Comma branch names on which to run SAST job.                                             | master                           |
+| DEP_REPORT_RUN_BRANCH | A branch name on which to run Dependancy report job.                                     | master                           |
 
 ---
 
