@@ -2,15 +2,23 @@
 
 CI scans workflows for NodeJS based projects. Following is the sample code of the CI pipeline
 
+## How To Use:
+
+Create 2 workflow files under directory `.github/workflows` with below content:
+
+- ci.yml
+- analytics.yml
+
+#### ci.yml
+
 ```sh
 name: studiographene-ci
 
 on:
   pull_request: {}
-  workflow_dispatch:
 
 jobs:
-  call-workflow:
+  ci:
     uses: studiographene/nodejs-ci/.github/workflows/ci.yml@master
     with:
       project_name: microservice-boilerplate
@@ -22,18 +30,47 @@ jobs:
     permissions: write-all
 ```
 
-There are a few parametes that can be set as custom inputs (in the with section):
+#### analytics.yml
 
-- project_name:  name of the project
-- excluded_jobs: A string of jobs that you want to exculude. For multiple, send the jobs comma seperated.
-- package_manager: default is npm
-- npm_token: NPM token if valid
-- build_command: build command for the project
-- docker_build_command: Docker build command
-- lint_command: lint command for the project
-- run_pr_agent: yes|no Defaut value is no
+```sh
+name: sg-analytics
 
-All jobs that are running:
+on:
+  push: {}
+
+jobs:
+  ci:
+    uses: studiographene/nodejs-ci/.github/workflows/analytics.yml@master
+    secrets: inherit
+    permissions: write-all
+```
+
+---
+
+## Inputs
+
+### Required:
+
+| Name         | Description              |
+| ------------ | ------------------------ |
+| project_name | The project/product name |
+
+### Optional:
+
+| Name                 | Description                                                                              | Default                          |
+| -------------------- | ---------------------------------------------------------------------------------------- | -------------------------------- |
+| excluded_jobs        | A string of jobs that you want to exculude. For multiple, send the jobs comma seperated. |                                  |
+| package_manager      |                                                                                          | npm                              |
+| npm_token            | NPM token                                                                                |                                  |
+| build_command        | build command for the project                                                            | `npm run build``                 |
+| docker_build_command | Docker build command                                                                     | `docker build -t local:latest .` |
+| lint_command         | lint command for the project                                                             | `npm run lintß`                  |
+| allowedLicenses      | A file containing allowed licenses name in License scan finding                          |                                  |
+| semgrep_options      |                                                                                          |                                  |
+
+---
+
+### Jobs list:
 
 - sast
 - osv
@@ -43,3 +80,5 @@ All jobs that are running:
 - docker
 - danger
 - pr_agent
+- dependencies_report_pulse
+- sast_report_pulse
