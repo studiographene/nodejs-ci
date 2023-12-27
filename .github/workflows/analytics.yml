@@ -2,6 +2,12 @@ name: studiographene-analytics
 on:
   workflow_call:
     inputs:
+      SAST_PULSE_URL:
+        type: string
+        default: "https://a0lrn1xwl4.execute-api.eu-west-1.amazonaws.com/github/repo-sast-errors"
+      DEP_PULSE_URL:
+        type: string
+        default: "https://a0lrn1xwl4.execute-api.eu-west-1.amazonaws.com/github/repo-libraries"
       excluded_jobs:
         type: string
         default: ""
@@ -125,7 +131,7 @@ jobs:
           echo "$nested_info"
 
           # Make a POST request with the $dep_info JSON object as the body
-          curl -X POST -H "Content-Type: application/json" -d "$nested_info" "https://a0lrn1xwl4.execute-api.eu-west-1.amazonaws.com/github/repo-libraries"
+          curl -X POST -H "Content-Type: application/json" -d "$nested_info" ${{ inputs.DEP_PULSE_URL }}
 
       - name: after step
         if: ${{ inputs.dependencies_report_pulse_after_step_command != '' }}
@@ -165,7 +171,7 @@ jobs:
           # Write the data to a JSON file
           echo "No. of error findings: $data"
           echo "$data" > sast_errors.json
-          url="https://a0lrn1xwl4.execute-api.eu-west-1.amazonaws.com/github/repo-sast-errors"
+          url=${{ inputs.SAST_PULSE_URL }}
           content_type="application/json"  # Set your content type
 
           # Send the request
