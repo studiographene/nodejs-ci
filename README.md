@@ -4,15 +4,14 @@ CI scans workflows for NodeJS based projects. Following is the sample code of th
 
 ## How To Use:
 
-Create 2 workflow files under directory `.github/workflows` with below content (change the inputs as required):
+### CI workflow
 
-- ci.yml
-- analytics.yml
+1. Create a file `ci.yml` with below content (change inputs as required).
 
 #### ci.yml
 
 ```sh
-name: studiographene-ci
+name: sg-ci
 
 on:
   pull_request: {}
@@ -25,6 +24,44 @@ jobs:
       build_command: pnpm run build
       lint_command: pnpm run lint
       excluded_jobs: docker
+    secrets: inherit
+    permissions: write-all
+```
+
+### Dependencies Analytics workflow
+
+1. Create a file `dependencies-analytics.yml` with below content (change inputs as required).
+
+#### dependencies-analytics.yml
+
+```sh
+name: sg-analytics
+
+on:
+  push: [<enter-branch-name>]
+
+jobs:
+  analytics:
+    uses: studiographene/nodejs-ci/.github/workflows/dependencies-analytics.yml@master
+    secrets: inherit
+    permissions: write-all
+```
+
+### SAST Analytics workflow
+
+1. Create a file `sast-analytics.yml` with below content (change inputs as required).
+
+#### sast-analytics.yml
+
+```sh
+name: sg-analytics
+
+on:
+  push: [<enter-branch-name>]
+
+jobs:
+  analytics:
+    uses: studiographene/nodejs-ci/.github/workflows/sast-analytics.yml@master
     secrets: inherit
     permissions: write-all
 ```
