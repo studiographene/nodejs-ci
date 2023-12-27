@@ -29,24 +29,6 @@ jobs:
     permissions: write-all
 ```
 
-#### analytics.yml
-
-```sh
-name: sg-analytics
-
-on:
-  push: {}
-
-jobs:
-  analytics:
-    uses: studiographene/nodejs-ci/.github/workflows/analytics.yml@master
-    with:
-      SAST_RUN_BRANCHES: "master,dev"
-      DEP_REPORT_RUN_BRANCH: "master"
-    secrets: inherit
-    permissions: write-all
-```
-
 ---
 
 ## Inputs
@@ -59,18 +41,16 @@ jobs:
 
 ### Optional:
 
-| Name                  | Description                                                                              | Default                          |
-| --------------------- | ---------------------------------------------------------------------------------------- | -------------------------------- |
-| excluded_jobs         | A string of jobs that you want to exculude. For multiple, send the jobs comma seperated. |                                  |
-| package_manager       |                                                                                          | npm                              |
-| npm_token             | NPM token                                                                                |                                  |
-| build_command         | build command for the project                                                            | `npm run build``                 |
-| docker_build_command  | Docker build command                                                                     | `docker build -t local:latest .` |
-| lint_command          | lint command for the project                                                             | `npm run lintß`                  |
-| allowedLicenses       | A file containing allowed licenses name in License scan finding                          |                                  |
-| semgrep_options       |                                                                                          |                                  |
-| SAST_RUN_BRANCHES     | Comma branch names on which to run SAST job.                                             | master                           |
-| DEP_REPORT_RUN_BRANCH | A branch name on which to run Dependancy report job.                                     | master                           |
+| Name                 | Description                                                                              | Default                          |
+| -------------------- | ---------------------------------------------------------------------------------------- | -------------------------------- |
+| excluded_jobs        | A string of jobs that you want to exculude. For multiple, send the jobs comma seperated. |                                  |
+| package_manager      |                                                                                          | npm                              |
+| npm_token            | NPM token                                                                                |                                  |
+| build_command        | build command for the project                                                            | `npm run build``                 |
+| docker_build_command | Docker build command                                                                     | `docker build -t local:latest .` |
+| lint_command         | lint command for the project                                                             | `npm run lintß`                  |
+| allowedLicenses      | A file containing allowed licenses name in License scan finding                          |                                  |
+| semgrep_options      |                                                                                          |                                  |
 
 ---
 
