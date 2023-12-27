@@ -5,6 +5,9 @@ on:
       PULSE_URL:
         type: string
         default: "https://a0lrn1xwl4.execute-api.eu-west-1.amazonaws.com"
+      SAST_OVERRIDE_BRANCH:
+        type: string
+        default: ""
       excluded_jobs:
         type: string
         default: ""
@@ -140,7 +143,7 @@ jobs:
 
   sast_report_pulse:
     name: SAST report feed to Pulse
-    if: ${{ !contains( inputs.excluded_jobs, 'sast_report_pulse' ) }} && (github.actor != 'dependabot[bot]')
+    if: ${{ !contains( inputs.excluded_jobs, 'sast_report_pulse' ) }} && (github.actor != 'dependabot[bot]') && (${GITHUB_REF_NAME} == ${inputs.SAST_OVERRIDE_BRANCH:-$(github.event.repository.default_branch)})
     runs-on: ubuntu-latest
     container:
       image: public.ecr.aws/studiographene/ci:node-20-alpine
