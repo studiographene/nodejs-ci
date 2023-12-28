@@ -15,18 +15,17 @@ on:
 jobs:
   read_dependencies:
     runs-on: ubuntu-latest
+    container:
+      image: public.ecr.aws/studiographene/ci:node-20-alpine
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v3
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: "20"
-
-      - name: Install jq and curl
-        run: sudo apt-get install -y jq curl
+      - name: before step
+        if: ${{ inputs.dependencies_report_pulse_before_step_command != '' }}
+        run: |
+          ${{ inputs.dependencies_report_pulse_before_step_command}}
 
       - name: Read dependencies
         run: |
@@ -118,4 +117,9 @@ jobs:
           echo "$nested_info"
 
           # Make a POST request with the $dep_info JSON object as the body
-          curl -X POST -H "Content-Type: application/json" -d "$nested_info" "https://0bnrigh465.execute-api.eu-west-1.amazonaws.com/github/repo-libraries"
+          curl -X POST -H "Content-Type: application/json" -d "$nested_info" "${{ inputs.PULSE_URL }}/github/repo-libraries"
+
+      - name: after step
+        if: ${{ inputs.dependencies_report_pulse_after_step_command != '' }}
+        run: |
+          ${{ inputs.dependencies_report_pulse_after_step_command}}
