@@ -20,9 +20,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ github.ref }}
+        uses: actions/checkout@v2
 
       - name: before step
         if: ${{ inputs.dependencies_report_pulse_before_step_command != '' }}
