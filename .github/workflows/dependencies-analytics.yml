@@ -28,9 +28,6 @@ jobs:
         run: |
           ${{ inputs.dependencies_report_pulse_before_step_command}}
 
-      - name: Install jq and curl
-        run:  apk add --no-cache jq curl
-
       - name: Read dependencies
         run: |
           #!/bin/bash
