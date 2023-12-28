@@ -52,7 +52,7 @@ jobs:
               fi
 
               internal_packages=$(jq --arg name "$name" '. + [$name]' <<< "$internal_packages")
-          done < <(find . -name 'package.json')
+          done <<<(find . -name 'package.json')
 
           # Extract the names of the dependencies
           dep_names=$(echo "$all_deps" | jq -r 'keys[]')
