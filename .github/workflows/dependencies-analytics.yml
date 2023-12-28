@@ -22,6 +22,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
+        with:
+          node-version: "20"
+
       - name: before step
         if: ${{ inputs.dependencies_report_pulse_before_step_command != '' }}
         run: |
