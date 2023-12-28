@@ -1,6 +1,6 @@
 # nodejs-ci
 
-CI scans workflows for NodeJS based projects. Following is the sample code of the CI pipeline
+CI scans workflows for NodeJS based projects.
 
 ## How To Use:
 
