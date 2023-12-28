@@ -28,44 +28,6 @@ jobs:
     permissions: write-all
 ```
 
-### Dependencies Analytics workflow
-
-1. Create a file `dependencies-analytics.yml` with below content (change inputs as required).
-
-#### dependencies-analytics.yml
-
-```sh
-name: sg-analytics
-
-on:
-  push: [<enter-branch-name>]
-
-jobs:
-  analytics:
-    uses: studiographene/nodejs-ci/.github/workflows/dependencies-analytics.yml@master
-    secrets: inherit
-    permissions: write-all
-```
-
-### SAST Analytics workflow
-
-1. Create a file `sast-analytics.yml` with below content (change inputs as required).
-
-#### sast-analytics.yml
-
-```sh
-name: sg-analytics
-
-on:
-  push: [<enter-branch-name>]
-
-jobs:
-  analytics:
-    uses: studiographene/nodejs-ci/.github/workflows/sast-analytics.yml@master
-    secrets: inherit
-    permissions: write-all
-```
-
 ---
 
 ## Inputs
@@ -78,16 +40,16 @@ jobs:
 
 ### Optional:
 
-| Name                 | Description                                                                              | Default                          |
-| -------------------- | ---------------------------------------------------------------------------------------- | -------------------------------- |
-| excluded_jobs        | A string of jobs that you want to exculude. For multiple, send the jobs comma seperated. |                                  |
-| package_manager      |                                                                                          | npm                              |
-| npm_token            | NPM token                                                                                |                                  |
-| build_command        | build command for the project                                                            | `npm run build``                 |
-| docker_build_command | Docker build command                                                                     | `docker build -t local:latest .` |
-| lint_command         | lint command for the project                                                             | `npm run lintß`                  |
-| allowedLicenses      | A file containing allowed licenses name in License scan finding                          |                                  |
-| semgrep_options      |                                                                                          |                                  |
+| Name                 | Description                                                     | Default                          |
+| -------------------- | --------------------------------------------------------------- | -------------------------------- |
+| excluded_jobs        | A string of comma separated jobs that you want to exculude.     |                                  |
+| package_manager      |                                                                 | npm                              |
+| npm_token            | NPM token                                                       |                                  |
+| build_command        | build command for the project                                   | `npm run build`                  |
+| docker_build_command | Docker build command                                            | `docker build -t local:latest .` |
+| lint_command         | lint command for the project                                    | `npm run lintß`                  |
+| allowedLicenses      | A file containing allowed licenses name in License scan finding |                                  |
+| semgrep_options      |                                                                 |                                  |
 
 ---
 
