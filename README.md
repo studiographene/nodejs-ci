@@ -28,6 +28,44 @@ jobs:
     permissions: write-all
 ```
 
+### Pulse Dependencies Analytics workflow
+
+1. Create a file `dependencies-analytics.yml` with below content (change inputs as required).
+
+#### dependencies-analytics.yml
+
+```sh
+name: sg-analytics
+
+on:
+  push: [<enter-branch-name>]
+
+jobs:
+  analytics:
+    uses: studiographene/nodejs-ci/.github/workflows/dependencies-analytics.yml@master
+    secrets: inherit
+    permissions: write-all
+```
+
+### Pulse SAST Analytics workflow
+
+1. Create a file `sast-analytics.yml` with below content (change inputs as required).
+
+#### sast-analytics.yml
+
+```sh
+name: sg-analytics
+
+on:
+  push: [<enter-branch-name>]
+
+jobs:
+  analytics:
+    uses: studiographene/nodejs-ci/.github/workflows/sast-analytics.yml@master
+    secrets: inherit
+    permissions: write-all
+```
+
 ---
 
 ## Inputs
