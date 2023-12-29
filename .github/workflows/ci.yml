@@ -2,6 +2,7 @@ name: studiographene-ci
 on:
   workflow_call:
     inputs:
+      # project_name is not used in the workflow, kept for backwards compatibility.
       project_name:
         type: string
         default: "sg-ci"
@@ -67,40 +68,37 @@ on:
         default: ""
       gitleaks_after_step_command:
         type: string
-        default: ""  
+        default: ""
       pr_agent_before_step_command:
         type: string
-        default: ""  
+        default: ""
       pr_agent_after_step_command:
         type: string
-        default: "" 
+        default: ""
       caching_before_step_command:
         type: string
-        default: ""  
+        default: ""
       caching_after_step_command:
         type: string
-        default: "" 
+        default: ""
       docker_before_step_command:
         type: string
-        default: ""  
+        default: ""
       docker_after_step_command:
         type: string
-        default: ""   
+        default: ""
       lint_before_step_command:
         type: string
-        default: ""  
+        default: ""
       lint_after_step_command:
         type: string
-        default: ""  
+        default: ""
       build_before_step_command:
         type: string
-        default: ""  
+        default: ""
       build_after_step_command:
         type: string
-        default: ""                            
-        
-        
-  
+        default: ""
 
 jobs:
   caching:
@@ -117,7 +115,7 @@ jobs:
       - name: Caching before step
         if: ${{ inputs.caching_before_step_command != '' }}
         run: |
-          ${{ inputs.caching_before_step_command}}      
+          ${{ inputs.caching_before_step_command}}
       - name: Install dependencies
         run: |
           ${{ inputs.package_manager }} install
@@ -187,7 +185,7 @@ jobs:
       - name: Semgrep before step
         if: ${{ inputs.semgrep_before_step_command != '' }}
         run: |
-          ${{ inputs.semgrep_before_step_command}}          
+          ${{ inputs.semgrep_before_step_command}}
       - name: SAST Scan
         id: generate_report
         run: |
@@ -237,7 +235,7 @@ jobs:
       - name: Semgrep after step
         if: ${{ inputs.semgrep_after_step_command != '' }}
         run: |
-          ${{ inputs.semgrep_after_step_command}}            
+          ${{ inputs.semgrep_after_step_command}}
 
   sbom:
     name: SBOM Generator using CycloneDX
@@ -254,7 +252,7 @@ jobs:
       - name: SBOM before step
         if: ${{ inputs.sbom_before_step_command != '' }}
         run: |
-          ${{ inputs.sbom_before_step_command}}          
+          ${{ inputs.sbom_before_step_command}}
       - name: Download Artifact
         uses: actions/download-artifact@v2
         with:
@@ -275,7 +273,7 @@ jobs:
       - name: SBOM after step
         if: ${{ inputs.sbom_after_step_command != '' }}
         run: |
-          ${{ inputs.sbom_after_step_command}}          
+          ${{ inputs.sbom_after_step_command}}
 
   osv:
     name: OSV/Dependency Scan using Google OSV
@@ -294,7 +292,7 @@ jobs:
       - name: osv before step
         if: ${{ inputs.osv_before_step_command != '' }}
         run: |
-          ${{ inputs.osv_before_step_command}}          
+          ${{ inputs.osv_before_step_command}}
       - name: OSV Scan
         run: |
           osv-scanner --format table --config=/root/configs/osv/config.toml --sbom=bom.xml
@@ -309,8 +307,8 @@ jobs:
     if: ${{ !contains( inputs.excluded_jobs, 'licenseScan' ) && (github.actor != 'dependabot[bot]') }}
     runs-on: ubuntu-latest
     permissions: write-all
-    env:  
-      ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }} 
+    env:
+      ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       PR_NUMBER: ${{ github.event.number }}
       PROJECT_NAME: ${{ github.event.repository.name }}
       PROJECT_OWNER: ${{ github.repository_owner }}
@@ -324,7 +322,7 @@ jobs:
       - name: LicenseScan before step
         if: ${{ inputs.licensescan_before_step_command != '' }}
         run: |
-          ${{ inputs.licensescan_before_step_command}}          
+          ${{ inputs.licensescan_before_step_command}}
       - name: Download Artifact
         uses: actions/download-artifact@v2
         with:
@@ -351,7 +349,7 @@ jobs:
       - name: gitleaks before step
         if: ${{ inputs.gitleaks_before_step_command != '' }}
         run: |
-          ${{ inputs.gitleaks_before_step_command}}          
+          ${{ inputs.gitleaks_before_step_command}}
       - name: Gitleaks scan
         uses: gitleaks/gitleaks-action@v1.6.0
         env:
@@ -359,7 +357,7 @@ jobs:
       - name: gitleaks after step
         if: ${{ inputs.gitleaks_after_step_command != '' }}
         run: |
-          ${{ inputs.gitleaks_after_step_command }}          
+          ${{ inputs.gitleaks_after_step_command }}
 
   lint:
     name: eslint scan to find linting issues
@@ -377,7 +375,7 @@ jobs:
       - name: lint before step
         if: ${{ inputs.lint_before_step_command != '' }}
         run: |
-          ${{ inputs.lint_before_step_command}}           
+          ${{ inputs.lint_before_step_command}}
       - name: Cache npm modules
         uses: actions/cache@v3
         if: inputs.package_manager == 'npm'
@@ -413,8 +411,7 @@ jobs:
       - name: lint after step
         if: ${{ inputs.lint_after_step_command != '' }}
         run: |
-          ${{ inputs.lint_after_step_command }}          
-          
+          ${{ inputs.lint_after_step_command }}
 
   build:
     name: project build check
@@ -432,7 +429,7 @@ jobs:
       - name: Build before step
         if: ${{ inputs.build_before_step_command != '' }}
         run: |
-          ${{ inputs.build_before_step_command}}          
+          ${{ inputs.build_before_step_command}}
       - name: Cache npm modules
         uses: actions/cache@v3
         if: inputs.package_manager == 'npm'
@@ -468,7 +465,7 @@ jobs:
       - name: Build after step
         if: ${{ inputs.build_after_step_command != '' }}
         run: |
-          ${{ inputs.build_after_step_command }}             
+          ${{ inputs.build_after_step_command }}
 
   docker:
     name: Docker build check
@@ -483,7 +480,7 @@ jobs:
       - name: Docker before step
         if: ${{ inputs.docker_before_step_command != '' }}
         run: |
-          ${{ inputs.docker_before_step_command }}          
+          ${{ inputs.docker_before_step_command }}
       - name: Docker Build project
         run: |
           ${{ inputs.docker_build_command }}
@@ -492,7 +489,7 @@ jobs:
       - name: Docker after step
         if: ${{ inputs.docker_after_step_command != '' }}
         run: |
-          ${{ inputs.docker_after_step_command }}             
+          ${{ inputs.docker_after_step_command }}
 
   danger:
     name: run danger check
@@ -510,7 +507,7 @@ jobs:
       - name: danger before step
         if: ${{ inputs.danger_before_step_command != '' }}
         run: |
-          ${{ inputs.danger_before_step_command}}          
+          ${{ inputs.danger_before_step_command}}
       - name: Cache npm modules
         uses: actions/cache@v3
         if: inputs.package_manager == 'npm'
@@ -549,7 +546,7 @@ jobs:
       - name: danger after step
         if: ${{ inputs.danger_after_step_command != '' }}
         run: |
-          ${{ inputs.danger_after_step_command}}          
+          ${{ inputs.danger_after_step_command}}
 
   pr_agent:
     name: Run pr agent on every pull request, respond to user comments
@@ -559,7 +556,7 @@ jobs:
       - name: PR agent before step
         if: ${{ inputs.pr_agent_before_step_command != '' }}
         run: |
-          ${{ inputs.pr_agent_before_step_command}}       
+          ${{ inputs.pr_agent_before_step_command}}
       - name: PR Agent action step
         id: pragent
         uses: Codium-ai/pr-agent@main
@@ -569,4 +566,4 @@ jobs:
       - name: PR agent after step
         if: ${{ inputs.pr_agent_after_step_command != '' }}
         run: |
-            ${{ inputs.pr_agent_after_step_command}}           
+          ${{ inputs.pr_agent_after_step_command}}
