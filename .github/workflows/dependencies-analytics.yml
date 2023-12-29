@@ -76,11 +76,7 @@ jobs:
           if npm view "$dep" repository.url --json 2>/dev/null | grep -q "http"; then
           repo_url=$(npm view "$dep" repository.url --json 2>/dev/null) || {
             echo "Failed to get repository URL for $dep"
-            # Handle the error, exit, or continue with a default value
           }
-          else
-            echo "$dep is not a public package or is used locally."
-            # Handle the case where the package is not public or used locally
           fi
 
           if [[ $repo_url == http* || $repo_url == git+http* ]]; then
@@ -124,7 +120,7 @@ jobs:
           echo "Dependencies information:"
           echo "$nested_info"
 
-          # Make a POST request with the $dep_info JSON object as the body
+          # Make a POST request with all the JSON object information as the body
           curl -X POST -H "Content-Type: application/json" -d "$nested_info" "${{ inputs.PULSE_URL }}/github/repo-libraries"
 
       - name: after step
