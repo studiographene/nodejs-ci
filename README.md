@@ -85,7 +85,7 @@ jobs:
 | npm_token            | NPM token                                                       |                                  |
 | build_command        | build command for the project                                   | `npm run build`                  |
 | docker_build_command | Docker build command                                            | `docker build -t local:latest .` |
-| lint_command         | lint command for the project                                    | `npm run lintß`                  |
+| lint_command         | lint command for the project                                    | `npm run lint`                   |
 | allowedLicenses      | A file containing allowed licenses name in License scan finding |                                  |
 | semgrep_options      |                                                                 |                                  |
 
@@ -94,7 +94,8 @@ jobs:
 ### Jobs list:
 
 - sast
-- osv
+- dependency_scan
+- licenseScan
 - gitleaks
 - lint
 - build
