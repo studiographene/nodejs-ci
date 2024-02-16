@@ -173,7 +173,7 @@ jobs:
 
   sast:
     name: SAST Scan using semgrep
-    if: ${{ !contains( inputs.excluded_jobs, 'sast' ) && (github.actor != 'dependabot[bot]') }}
+    if: ${{ !contains( inputs.excluded_jobs, 'sast' ) && (github.actor != 'dependabot[bot]') && (github.event_name != 'issue_comment') }}
     runs-on: ubuntu-latest
     permissions: write-all
     container:
@@ -279,7 +279,7 @@ jobs:
   dependency_scan:
     name: Dependency Scan using Google OSV
     needs: sbom
-    if: ${{ !contains( inputs.excluded_jobs, 'dependency_scan' ) && (github.actor != 'dependabot[bot]') }}
+    if: ${{ !contains( inputs.excluded_jobs, 'dependency_scan' ) && (github.actor != 'dependabot[bot]') && (github.event_name != 'issue_comment') }}
     runs-on: ubuntu-latest
     permissions: write-all
     container:
@@ -305,7 +305,7 @@ jobs:
   licenseScan:
     name: Executing a licenseScan using studiographene-cli
     needs: sbom
-    if: ${{ !contains( inputs.excluded_jobs, 'licenseScan' ) && (github.actor != 'dependabot[bot]') }}
+    if: ${{ !contains( inputs.excluded_jobs, 'licenseScan' ) && (github.actor != 'dependabot[bot]') && (github.event_name != 'issue_comment') }}
     runs-on: ubuntu-latest
     permissions: write-all
     env:
@@ -339,7 +339,7 @@ jobs:
 
   gitleaks:
     name: Gitleaks scan to find secrets
-    if: ${{ !contains( inputs.excluded_jobs, 'gitleaks' ) && (github.actor != 'dependabot[bot]') }}
+    if: ${{ !contains( inputs.excluded_jobs, 'gitleaks' ) && (github.actor != 'dependabot[bot]') && (github.event_name != 'issue_comment') }}
     runs-on: ubuntu-latest
     permissions: write-all
     steps:
@@ -362,7 +362,7 @@ jobs:
 
   lint:
     name: eslint scan to find linting issues
-    if: ${{ !contains( inputs.excluded_jobs, 'lint' ) && (github.actor != 'dependabot[bot]') }}
+    if: ${{ !contains( inputs.excluded_jobs, 'lint' ) && (github.actor != 'dependabot[bot]') && (github.event_name != 'issue_comment') }}
     runs-on: ubuntu-latest
     permissions: write-all
     needs: caching
@@ -416,7 +416,7 @@ jobs:
 
   build:
     name: project build check
-    if: ${{ !contains( inputs.excluded_jobs, 'build' ) && (github.actor != 'dependabot[bot]') }}
+    if: ${{ !contains( inputs.excluded_jobs, 'build' ) && (github.actor != 'dependabot[bot]') && (github.event_name != 'issue_comment') }}
     runs-on: ubuntu-latest
     permissions: write-all
     needs: caching
@@ -470,7 +470,7 @@ jobs:
 
   docker:
     name: Docker build check
-    if: ${{ !contains( inputs.excluded_jobs, 'docker' ) && (github.actor != 'dependabot[bot]') }}
+    if: ${{ !contains( inputs.excluded_jobs, 'docker' ) && (github.actor != 'dependabot[bot]') && (github.event_name != 'issue_comment') }}
     runs-on: ubuntu-latest
     permissions: write-all
     steps:
@@ -494,7 +494,7 @@ jobs:
 
   danger:
     name: run danger check
-    if: ${{ !contains( inputs.excluded_jobs, 'danger' ) && (github.actor != 'dependabot[bot]') }}
+    if: ${{ !contains( inputs.excluded_jobs, 'danger' ) && (github.actor != 'dependabot[bot]') && (github.event_name != 'issue_comment') }}
     runs-on: ubuntu-latest
     permissions: write-all
     needs: caching
