@@ -103,7 +103,6 @@ jobs:
 - lint
 - build
 - docker
-- danger
 - pr_agent
 - dependencies_report_pulse
 - sast_report_pulse
