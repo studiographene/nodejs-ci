@@ -78,16 +78,19 @@ jobs:
 
 ### Optional:
 
-| Name                 | Description                                                     | Default                          |
-| -------------------- | --------------------------------------------------------------- | -------------------------------- |
-| excluded_jobs        | A string of comma separated jobs that you want to exculude.     |                                  |
-| package_manager      |                                                                 | npm                              |
-| npm_token            | NPM token                                                       |                                  |
-| build_command        | build command for the project                                   | `npm run build`                  |
-| docker_build_command | Docker build command                                            | `docker build -t local:latest .` |
-| lint_command         | lint command for the project                                    | `npm run lint`                   |
-| allowedLicenses      | A file containing allowed licenses name in License scan finding |                                  |
-| semgrep_options      |                                                                 |                                  |
+| Name                     | Description                                                                 | Default                          |
+| ------------------------ | --------------------------------------------------------------------------- | -------------------------------- |
+| excluded_jobs            | A string of comma separated jobs that you want to exculude.                 |                                  |
+| package_manager          |                                                                             | npm                              |
+| npm_token                | NPM token                                                                   |                                  |
+| build_command            | build command for the project                                               | `npm run build`                  |
+| docker_build_command     | Docker build command                                                        | `docker build -t local:latest .` |
+| docker_build_image_id    | Docker image ID as mentioned in docker_build_command                        | `local:latest`                   |
+| CONTAINER_SCANNERS:      | comma-separated list of what security issues to detect (vuln,secret,config) | `vuln`                           |
+| CONTAINER_SCAN_SKIP_DIRS | Comma separated list of directories to skip scanning                        |                                  |
+| lint_command             | lint command for the project                                                | `npm run lint`                   |
+| allowedLicenses          | A file containing allowed licenses name in License scan finding             |                                  |
+| semgrep_options          |                                                                             |                                  |
 
 ---
 

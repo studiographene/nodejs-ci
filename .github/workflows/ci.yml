@@ -21,6 +21,19 @@ on:
       docker_build_command:
         type: string
         default: "docker build -t local:latest ."
+      docker_build_image_id:
+        description: "Docker image ID as mentioned in docker_build_command"
+        type: string
+        default: "local:latest"
+      CONTAINER_SCANNERS:
+        description: "comma-separated list of what security issues to detect (vuln,secret,config). Default = vuln"
+        type: string
+        required: false
+        default: vuln
+      CONTAINER_SCAN_SKIP_DIRS:
+        description: "Comma separated list of directories to skip scanning"
+        type: string
+        required: false
       lint_command:
         type: string
         default: "npm run lint"
@@ -476,16 +489,67 @@ jobs:
         if: ${{ inputs.docker_before_step_command != '' }}
         run: |
           ${{ inputs.docker_before_step_command }}
-      - name: Docker Build project
+      - name: Docker Build
         run: |
           ${{ inputs.docker_build_command }}
         env:
           NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Creating Trivy report PR comment template file
+        run: |
+          cat <<EOF >> prcomment.tpl 
+          | Package | Vulnerability | Severity | Status | Installed Version | Fixed Version | Title | \n
+          | ------- | ------------- | -------- | ------ | ----------------- | ------------- | ----- |
+          {{- range .}}
+          {{- range .Vulnerabilities}}
+          \n | {{ .PkgName | html }} | {{ .VulnerabilityID | html }} | {{ .Severity | html }} | {{ .Status | html }} | {{ .InstalledVersion | html }} | {{ .FixedVersion | html }} | {{ .Title | html }} |
+          {{ end }}
+          {{- end }}
+          EOF
+      - name: Trivy container vulnerability scan
+        id: container_scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ inputs.docker_build_image_id }}
+          format: "template"
+          template: "@prcomment.tpl"
+          output: "trivyreport.json"
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: "os,library"
+          severity: "CRITICAL,HIGH"
+          scanners: ${{ inputs.CONTAINER_SCANNERS }}
+          skip-dirs: ${{ inputs.CONTAINER_SCAN_SKIP_DIRS }}
+      - name: Report vulnerabilities in PR
+        if: failure() && steps.container_scan.outcome == 'failure'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          echo -n "{\"body\":\"### Vulnerabilities detected\nThe following vulnerabilities of HIGH or CRITICAL severity has been detected in the code. Please resolve these before merging the pull request.\n\n" > result.json
+          cat trivyreport.json >> result.json
+          echo "\"}" >> result.json
+          curl -X POST -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+            ${{ github.event.pull_request.comments_url }} \
+            -d @result.json
+
+      - name: Report no vulnerabilities in PR
+        if: success() && steps.container_scan.outcome == 'success'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        shell: bash
+        run: |
+          echo -n "{\"body\":\"### No vulnerabilities detected\nNo vulnerabilities of HIGH or CRITICAL severity has been detected in the code.\"}" > result.json
+          curl -X POST -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+            ${{ github.event.pull_request.comments_url }} \
+            -d @result.json
       - name: after step
         if: ${{ inputs.docker_after_step_command != '' }}
         run: |
           ${{ inputs.docker_after_step_command }}
-
 
   pr_agent:
     name: Run pr agent on every pull request, respond to user comments
