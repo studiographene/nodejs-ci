@@ -100,6 +100,7 @@ on:
 jobs:
   caching:
     name: Cache node modules
+    if: ${{ github.event_name != 'issue_comment' }}
     runs-on: ubuntu-latest
     permissions: write-all
     container:
@@ -240,6 +241,7 @@ jobs:
 
   sbom:
     name: SBOM Generator using CycloneDX
+    if: ${{ github.event_name != 'issue_comment' }}
     runs-on: ubuntu-latest
     permissions: write-all
     needs: caching
