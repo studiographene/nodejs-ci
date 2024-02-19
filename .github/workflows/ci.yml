@@ -344,28 +344,7 @@ jobs:
         run: |
           ${{ inputs.licensescan_after_step_command}}
 
-  gitleaks:
-    name: Gitleaks scan to find secrets
-    if: ${{ !contains( inputs.excluded_jobs, 'gitleaks' ) && (github.actor != 'dependabot[bot]') }}
-    runs-on: ubuntu-latest
-    permissions: write-all
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - name: before step
-        if: ${{ inputs.gitleaks_before_step_command != '' }}
-        run: |
-          ${{ inputs.gitleaks_before_step_command}}
-      - name: Gitleaks scan
-        uses: gitleaks/gitleaks-action@v1.6.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: after step
-        if: ${{ inputs.gitleaks_after_step_command != '' }}
-        run: |
-          ${{ inputs.gitleaks_after_step_command }}
+
 
   lint:
     name: eslint scan to find linting issues
@@ -570,3 +549,100 @@ jobs:
         if: ${{ inputs.pr_agent_after_step_command != '' }}
         run: |
           ${{ inputs.pr_agent_after_step_command}}
+
+
+
+  Independent_security_scans:
+    runs-on: ubuntu-latest
+    permissions: write-all
+    continue-on-error: true
+    container:
+      image: public.ecr.aws/studiographene/ci:node-20-alpine
+    steps:
+      - name: Set SAST run condition
+        run: echo "RUN_SAST=true" >> $GITHUB_ENV
+        if: ${{ !contains(inputs.excluded_jobs, 'sast') && (github.actor != 'dependabot[bot]') }}
+      - name: Set Gitleaks run condition
+        run: echo "RUN_GITLEAKS=true" >> $GITHUB_ENV
+        if: ${{ !contains(inputs.excluded_jobs, 'gitleaks') && (github.actor != 'dependabot[bot]') }}  
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.REF }}
+
+      - name: SAST before step
+        if: ${{ inputs.semgrep_before_step_command != '' }}
+        run: |
+          ${{ inputs.semgrep_before_step_command}}
+
+      - name: SAST Scan
+        id: generate_report
+        run: |
+          if: ${{env.RUN_SAST == 'true'}}
+          semgrep scan --config "p/default" --config /root/configs/semgrep/rules/eslint.v1.3.32.yml --sarif ${{ inputs.semgrep_options }} > semgrep.sarif
+
+          csvData=$(node - << EOF
+          const fs = require('fs');
+          const sarifFile = fs.readFileSync("semgrep.sarif", 'utf8');
+          const sarifData = JSON.parse(sarifFile);
+
+          const tableData = [];
+
+          for (const run of sarifData.runs) {
+            for (const result of run.results) {
+              let ruleId = result.ruleId.replaceAll(',',';');
+              ruleId = ruleId.replaceAll('\n','');
+              let message = result.message.text.replaceAll(',', ';');
+              message = message.replaceAll('\n','');
+              const severity = result.level;
+              const location = result.locations[0].physicalLocation;
+              const lineNumber = location.region.startLine;
+              const fileName = location.artifactLocation.uri;
+              // Add data to the tableData array
+              tableData.push(ruleId + "|" + message +"|" + lineNumber + "|" + fileName);
+            }
+          }                  
+          // Log the CSV data as a string
+          const csvData = tableData.join('\n');
+          console.log(csvData);
+          EOF
+          )
+
+          # Append the CSV data to the output file
+          echo 'report<<EOF' >> $GITHUB_OUTPUT
+          echo "$csvData" >> $GITHUB_OUTPUT
+          echo 'EOF' >> $GITHUB_OUTPUT
+
+      - uses: mshick/add-pr-comment@v2
+        with:
+          message-id: sast-scan
+          message: "### Semgrep Report \n
+            Below are the issues found by semgrep: \n
+            \n\nRule Id | Message | Line Number | File Name \n
+            --- | --- | --- | --- \n
+              ${{steps.generate_report.outputs.report}}\n\n
+            "
+      - name: after step
+        if: ${{ inputs.semgrep_after_step_command != '' }}
+        run: |
+          ${{ inputs.semgrep_after_step_command}}
+      - name: before step
+        if: ${{ inputs.gitleaks_before_step_command != '' }}
+        run: |
+            ${{ inputs.gitleaks_before_step_command}}
+      - name: Gitleaks scan
+        if: ${{env.RUN_GITLEAKS == 'true'}}
+        uses: gitleaks/gitleaks-action@v1.6.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: after step
+        if: ${{ inputs.gitleaks_after_step_command != '' }}
+        run: |
+          ${{ inputs.gitleaks_after_step_command }}          
+      - name: Gitleaks before step
+        if: ${{ !contains( inputs.excluded_jobs, 'gitleaks' ) && (github.actor != 'dependabot[bot]') && inputs.gitleaks_before_step_command != '' }}
+        run: |
+          ${{ inputs.gitleaks_before_step_command}}
+          
+        
+
