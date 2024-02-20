@@ -608,6 +608,7 @@ jobs:
           echo 'EOF' >> $GITHUB_OUTPUT
 
       - uses: mshick/add-pr-comment@v2
+        continue-on-error: true
         with:
           message-id: sast-scan
           message: "### Semgrep Report \n
