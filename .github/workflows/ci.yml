@@ -570,7 +570,6 @@ jobs:
           ${{ inputs.semgrep_before_step_command}}
 
       - name: SAST Scan
-        continue-on-error: true
         if: ${{ !contains(inputs.excluded_jobs, 'sast') && (github.actor != 'dependabot[bot]') }}
         id: generate_report
         run: |
@@ -609,7 +608,7 @@ jobs:
           echo 'EOF' >> $GITHUB_OUTPUT
 
       - uses: mshick/add-pr-comment@v2
-        continue-on-error: true
+        if: always()
         with:
           message-id: sast-scan
           message: "### Semgrep Report \n
