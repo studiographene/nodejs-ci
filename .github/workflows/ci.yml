@@ -573,7 +573,7 @@ jobs:
         if: ${{ !contains(inputs.excluded_jobs, 'sast') && (github.actor != 'dependabot[bot]') }}
         id: generate_report
         run: |
-          semgrep scan --config "p/default" --config /root/configs/semgrep/rules/eslint.v1.3.32.yml --sarif ${{ inputs.semgrep_options }} > semgrep.sarif
+          semgrep scan  --error --config "p/default" --config /root/configs/semgrep/rules/eslint.v1.3.32.yml --sarif ${{ inputs.semgrep_options }} > semgrep.sarif
 
           csvData=$(node - << EOF
           const fs = require('fs');
