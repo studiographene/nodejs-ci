@@ -559,12 +559,6 @@ jobs:
     container:
       image: public.ecr.aws/studiographene/ci:node-20-alpine
     steps:
-      - name: Set SAST run condition
-        run: echo "RUN_SAST=true" >> $GITHUB_ENV
-        if: ${{ !contains(inputs.excluded_jobs, 'sast') && (github.actor != 'dependabot[bot]') }}
-      - name: Set Gitleaks run condition
-        run: echo "RUN_GITLEAKS=true" >> $GITHUB_ENV
-        if: ${{ !contains(inputs.excluded_jobs, 'gitleaks') && (github.actor != 'dependabot[bot]') }}  
       - name: Checkout
         uses: actions/checkout@v3
         with:
@@ -576,9 +570,9 @@ jobs:
           ${{ inputs.semgrep_before_step_command}}
 
       - name: SAST Scan
+        if: ${{ !contains(inputs.excluded_jobs, 'sast') && (github.actor != 'dependabot[bot]') }}
         id: generate_report
         run: |
-          if: ${{env.RUN_SAST == 'true'}}
           semgrep scan --config "p/default" --config /root/configs/semgrep/rules/eslint.v1.3.32.yml --sarif ${{ inputs.semgrep_options }} > semgrep.sarif
 
           csvData=$(node - << EOF
@@ -631,7 +625,7 @@ jobs:
         run: |
             ${{ inputs.gitleaks_before_step_command}}
       - name: Gitleaks scan
-        if: ${{env.RUN_GITLEAKS == 'true'}}
+        if: ${{ !contains(inputs.excluded_jobs, 'gitleaks') && (github.actor != 'dependabot[bot]') }} 
         uses: gitleaks/gitleaks-action@v1.6.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
