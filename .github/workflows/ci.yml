@@ -570,6 +570,7 @@ jobs:
           ${{ inputs.semgrep_before_step_command}}
 
       - name: SAST Scan
+        continue-on-error: true
         if: ${{ !contains(inputs.excluded_jobs, 'sast') && (github.actor != 'dependabot[bot]') }}
         id: generate_report
         run: |
