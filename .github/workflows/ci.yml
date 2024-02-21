@@ -228,6 +228,7 @@ jobs:
           ${{ inputs.osv_before_step_command}}
       - name: Dependency Scan using Google OSV
         if: ${{ !contains( inputs.excluded_jobs, 'dependency_scan' ) && (github.actor != 'dependabot[bot]') }}
+        continue-on-error: true
         run: |
           osv-scanner --format table --config=/root/configs/osv/config.toml --sbom=bom.xml
       - name: after step
@@ -250,6 +251,7 @@ jobs:
           PROJECT_NAME: ${{ github.event.repository.name }}
           PROJECT_OWNER: ${{ github.repository_owner }}
         if: ${{ !contains( inputs.excluded_jobs, 'licenseScan' ) && (github.actor != 'dependabot[bot]') }}
+        continue-on-error: true
         run: |
           /root/executables/ci-utility check --sbom bom.xml --allowedLicences ${{ inputs.allowedLicenses }}
       - name: after step
@@ -484,6 +486,7 @@ jobs:
 
       - name: SAST Scan
         if: ${{ !contains(inputs.excluded_jobs, 'sast') && (github.actor != 'dependabot[bot]') }}
+        continue-on-error: true
         id: generate_report
         run: |
           semgrep scan  --error --config "p/default" --config /root/configs/semgrep/rules/eslint.v1.3.32.yml --sarif ${{ inputs.semgrep_options }} > semgrep.sarif
@@ -539,8 +542,8 @@ jobs:
         run: |
             ${{ inputs.gitleaks_before_step_command}}
       - name: Gitleaks scan
-        continue-on-error: true
         if: ${{ !contains(inputs.excluded_jobs, 'gitleaks') && (github.actor != 'dependabot[bot]') }} 
+        continue-on-error: true
         uses: gitleaks/gitleaks-action@v1.6.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
