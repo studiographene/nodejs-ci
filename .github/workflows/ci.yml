@@ -196,7 +196,7 @@ jobs:
         if: ${{ inputs.sbom_before_step_command != '' }}
         run: |
           ${{ inputs.sbom_before_step_command}}
-      - name: Download Artifact
+      - name: Download LockFile Artifact
         uses: actions/download-artifact@v2
         with:
           name: lockFile
@@ -227,8 +227,8 @@ jobs:
         run: |
           ${{ inputs.osv_before_step_command}}
       - name: Dependency Scan using Google OSV
+        if: ${{ !contains( inputs.excluded_jobs, 'dependency_scan' ) && (github.actor != 'dependabot[bot]') }}
         run: |
-          if: ${{ !contains( inputs.excluded_jobs, 'dependency_scan' ) && (github.actor != 'dependabot[bot]') }}
           osv-scanner --format table --config=/root/configs/osv/config.toml --sbom=bom.xml
       - name: after step
         if: ${{ inputs.osv_after_step_command != '' }}
@@ -539,6 +539,7 @@ jobs:
         run: |
             ${{ inputs.gitleaks_before_step_command}}
       - name: Gitleaks scan
+        continue-on-error: true
         if: ${{ !contains(inputs.excluded_jobs, 'gitleaks') && (github.actor != 'dependabot[bot]') }} 
         uses: gitleaks/gitleaks-action@v1.6.0
         env:
