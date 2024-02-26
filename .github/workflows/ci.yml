@@ -318,6 +318,7 @@ jobs:
           )
 
           # Append the CSV data to the output file
+          echo 'generating report'
           echo 'report<<EOF' >> $GITHUB_OUTPUT
           echo "$csvData" >> $GITHUB_OUTPUT
           echo 'EOF' >> $GITHUB_OUTPUT
