@@ -210,21 +210,11 @@ jobs:
           FETCH_LICENSE: true
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CDXGEN_DEBUG_MODE: debug
-      # - name: Upload SBOM Artifact
-      #   uses: actions/upload-artifact@v2
-      #   with:
-      #     name: sbom
-      #     path: bom.xml
       - name: after step
         if: ${{ inputs.sbom_after_step_command != '' }}
         run: |
           ${{ inputs.sbom_after_step_command}}
       - name: before step
-      #   uses: actions/download-artifact@v2
-      #   with:
-      #     name: sbom
-      #     path: .
-      # - name: before step
         if: ${{ inputs.osv_before_step_command != '' }}
         run: |
           ${{ inputs.osv_before_step_command}}
@@ -240,11 +230,6 @@ jobs:
         if: ${{ inputs.licensescan_before_step_command != '' }}
         run: |
           ${{ inputs.licensescan_before_step_command}}
-      # - name: Download Artifact
-      #   uses: actions/download-artifact@v2
-      #   with:
-      #     name: sbom
-      #     path: .
       - name: License Scan
         env:
           ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -252,7 +237,6 @@ jobs:
           PROJECT_NAME: ${{ github.event.repository.name }}
           PROJECT_OWNER: ${{ github.repository_owner }}
         if: ${{ always() && !contains( inputs.excluded_jobs, 'licenseScan' ) && (github.actor != 'dependabot[bot]') }}
-        
         run: |
           /root/executables/ci-utility check --sbom bom.xml --allowedLicences ${{ inputs.allowedLicenses }}
       - name: after step
@@ -262,115 +246,7 @@ jobs:
 
 
 
-  lint:
-    name: eslint scan to find linting issues
-    if: ${{ !contains( inputs.excluded_jobs, 'lint' ) && (github.actor != 'dependabot[bot]') }}
-    runs-on: ubuntu-latest
-    permissions: write-all
-    needs: caching
-    container:
-      image: public.ecr.aws/studiographene/ci:node-20-alpine
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ github.REF }}
-      - name: before step
-        if: ${{ inputs.lint_before_step_command != '' }}
-        run: |
-          ${{ inputs.lint_before_step_command}}
-      - name: Cache npm modules
-        uses: actions/cache@v3
-        if: inputs.package_manager == 'npm'
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-npm-
-      - name: Cache yarn modules
-        uses: actions/cache@v3
-        if: inputs.package_manager == 'yarn'
-        with:
-          path: /usr/local/share/.cache/yarn
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-
-      - name: Cache pnpm modules
-        uses: actions/cache@v3
-        if: inputs.package_manager == 'pnpm'
-        with:
-          path: /__w/.pnpm-store
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-
-      - name: Install dependencies
-        run: |
-          ${{ inputs.package_manager }} install
-        env:
-          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Eslint scan
-        run: |
-          ${{ inputs.lint_command }}
-      - name: after step
-        if: ${{ inputs.lint_after_step_command != '' }}
-        run: |
-          ${{ inputs.lint_after_step_command }}
 
-  build:
-    name: project build check
-    if: ${{ !contains( inputs.excluded_jobs, 'build' ) && (github.actor != 'dependabot[bot]') }}
-    runs-on: ubuntu-latest
-    permissions: write-all
-    needs: caching
-    container:
-      image: public.ecr.aws/studiographene/ci:node-20-alpine
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ github.REF }}
-      - name: before step
-        if: ${{ inputs.build_before_step_command != '' }}
-        run: |
-          ${{ inputs.build_before_step_command}}
-      - name: Cache npm modules
-        uses: actions/cache@v3
-        if: inputs.package_manager == 'npm'
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-npm-
-      - name: Cache yarn modules
-        uses: actions/cache@v3
-        if: inputs.package_manager == 'yarn'
-        with:
-          path: /usr/local/share/.cache/yarn
-          key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-yarn-
-      - name: Cache pnpm modules
-        uses: actions/cache@v3
-        if: inputs.package_manager == 'pnpm'
-        with:
-          path: /__w/.pnpm-store
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-
-      - name: Install dependencies
-        run: |
-          ${{ inputs.package_manager }} install
-        env:
-          NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build project
-        run: |
-          ${{ inputs.build_command }}
-      - name: after step
-        if: ${{ inputs.build_after_step_command != '' }}
-        run: |
-          ${{ inputs.build_after_step_command }}
-
-  docker:
     name: Docker build check
     if: ${{ !contains( inputs.excluded_jobs, 'docker' ) && (github.actor != 'dependabot[bot]') }}
     runs-on: ubuntu-latest
@@ -555,6 +431,137 @@ jobs:
         if: ${{ !contains( inputs.excluded_jobs, 'gitleaks' ) && (github.actor != 'dependabot[bot]') && inputs.gitleaks_before_step_command != '' }}
         run: |
           ${{ inputs.gitleaks_before_step_command}}
+
+
+  Technology_based_scans:
+      name: Scans based on technology
+      runs-on: ubuntu-latest
+      permissions: write-all
+      needs: caching
+      container:
+        image: public.ecr.aws/studiographene/ci:node-20-alpine
+      steps:
+        - name: Checkout
+          uses: actions/checkout@v3
+          with:
+            ref: ${{ github.REF }}
+        - name: before step
+          if: ${{ inputs.lint_before_step_command != '' }}
+          run: |
+            ${{ inputs.lint_before_step_command}}
+        - name: Cache npm modules
+          uses: actions/cache@v3
+          if: inputs.package_manager == 'npm'
+          with:
+            path: ~/.npm
+            key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.lock') }}
+            restore-keys: |
+              ${{ runner.os }}-npm-
+        - name: Cache yarn modules
+          uses: actions/cache@v3
+          if: inputs.package_manager == 'yarn'
+          with:
+            path: /usr/local/share/.cache/yarn
+            key: ${{ runner.os }}-yarn-${{ hashFiles('**/yarn.lock') }}
+            restore-keys: |
+              ${{ runner.os }}-yarn-
+        - name: Cache pnpm modules
+          uses: actions/cache@v3
+          if: inputs.package_manager == 'pnpm'
+          with:
+            path: /__w/.pnpm-store
+            key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+            restore-keys: |
+              ${{ runner.os }}-pnpm-
+        - name: Install dependencies
+          run: |
+            ${{ inputs.package_manager }} install
+          env:
+            NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        - name: Eslint scan
+          if: ${{ always() && !contains( inputs.excluded_jobs, 'lint' ) && (github.actor != 'dependabot[bot]') }}
+          run: |
+            ${{ inputs.lint_command }}
+        - name: after step
+          if: ${{ inputs.lint_after_step_command != '' }}
+          run: |
+            ${{ inputs.lint_after_step_command }}  
+            - name: before step
+            if: ${{ inputs.docker_before_step_command != '' }}
+            run: |
+              ${{ inputs.docker_before_step_command }}
+        - name: Docker Build
+          if: ${{ always() && !contains( inputs.excluded_jobs, 'docker' ) && (github.actor != 'dependabot[bot]') }}
+          run: |
+            ${{ inputs.docker_build_command }}
+          env:
+            NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        - name: Creating Trivy report PR comment template file
+          run: |
+            cat <<EOF >> prcomment.tpl 
+            | Package | Vulnerability | Severity | Status | Installed Version | Fixed Version | Title | \n
+            | ------- | ------------- | -------- | ------ | ----------------- | ------------- | ----- |
+            {{- range .}}
+            {{- range .Vulnerabilities}}
+            \n | {{ .PkgName | html }} | {{ .VulnerabilityID | html }} | {{ .Severity | html }} | {{ .Status | html }} | {{ .InstalledVersion | html }} | {{ .FixedVersion | html }} | {{ .Title | html }} |
+            {{ end }}
+            {{- end }}
+            EOF
+        - name: Trivy container vulnerability scan
+          id: container_scan
+          uses: aquasecurity/trivy-action@master
+          with:
+            image-ref: ${{ inputs.docker_build_image_id }}
+            format: "template"
+            template: "@prcomment.tpl"
+            output: "trivyreport.json"
+            exit-code: "1"
+            ignore-unfixed: true
+            vuln-type: "os,library"
+            severity: "CRITICAL,HIGH"
+            scanners: ${{ inputs.CONTAINER_SCANNERS }}
+            skip-dirs: ${{ inputs.CONTAINER_SCAN_SKIP_DIRS }}
+        - name: Report vulnerabilities in PR
+          if: failure() && steps.container_scan.outcome == 'failure'
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          shell: bash
+          run: |
+            echo -n "{\"body\":\"### Vulnerabilities detected\nThe following vulnerabilities of HIGH or CRITICAL severity has been detected in the code. Please resolve these before merging the pull request.\n\n" > result.json
+            cat trivyreport.json >> result.json
+            echo "\"}" >> result.json
+            curl -X POST -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+              ${{ github.event.pull_request.comments_url }} \
+              -d @result.json
+        - name: Report no vulnerabilities in PR
+          if: success() && steps.container_scan.outcome == 'success'
+          env:
+            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          shell: bash
+          run: |
+            echo -n "{\"body\":\"### No vulnerabilities detected\nNo vulnerabilities of HIGH or CRITICAL severity has been detected in the code.\"}" > result.json
+            curl -X POST -H "Accept: application/vnd.github+json" \
+              -H "X-GitHub-Api-Version: 2022-11-28" \
+              -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+              ${{ github.event.pull_request.comments_url }} \
+              -d @result.json
+        - name: after step
+          if: ${{ inputs.docker_after_step_command != '' }}
+          run: |
+            ${{ inputs.docker_after_step_command }} 
+            - name: before step
+            if: ${{ inputs.build_before_step_command != '' }}
+            run: |
+              ${{ inputs.build_before_step_command}}
+        - name: Build project
+          run: |
+            ${{ inputs.build_command }}
+        - name: after step
+          if: ${{ inputs.build_after_step_command != '' }}
+          run: |
+            ${{ inputs.build_after_step_command }}                               
+            
           
-        
 
