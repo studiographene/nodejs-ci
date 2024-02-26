@@ -229,7 +229,7 @@ jobs:
         run: |
           ${{ inputs.osv_before_step_command}}
       - name: Dependency Scan using Google OSV
-        if: ${{ !contains( inputs.excluded_jobs, 'dependency_scan' ) && (github.actor != 'dependabot[bot]') }}
+        if: ${{ always() && !contains( inputs.excluded_jobs, 'dependency_scan' ) && (github.actor != 'dependabot[bot]') }}
         run: |
           osv-scanner --format table --config=/root/configs/osv/config.toml --sbom=bom.xml
       - name: after step
@@ -251,7 +251,7 @@ jobs:
           PR_NUMBER: ${{ github.event.number }}
           PROJECT_NAME: ${{ github.event.repository.name }}
           PROJECT_OWNER: ${{ github.repository_owner }}
-        if: ${{ !contains( inputs.excluded_jobs, 'licenseScan' ) && (github.actor != 'dependabot[bot]') }}
+        if: ${{ always() && !contains( inputs.excluded_jobs, 'licenseScan' ) && (github.actor != 'dependabot[bot]') }}
         
         run: |
           /root/executables/ci-utility check --sbom bom.xml --allowedLicences ${{ inputs.allowedLicenses }}
@@ -471,8 +471,7 @@ jobs:
   Independent_security_scans:
     runs-on: ubuntu-latest
     permissions: write-all
-    strategy:
-      fail-fast: false
+
     container:
       image: public.ecr.aws/studiographene/ci:node-20-alpine
     steps:
@@ -487,7 +486,7 @@ jobs:
           ${{ inputs.semgrep_before_step_command}}
 
       - name: SAST Scan
-        if: ${{ !contains(inputs.excluded_jobs, 'sast') && (github.actor != 'dependabot[bot]') }}
+        if: ${{ always() && !contains(inputs.excluded_jobs, 'sast') && (github.actor != 'dependabot[bot]') }}
         
         id: generate_report
         run: |
@@ -544,7 +543,7 @@ jobs:
         run: |
             ${{ inputs.gitleaks_before_step_command}}
       - name: Gitleaks scan
-        if: ${{ !contains(inputs.excluded_jobs, 'gitleaks') && (github.actor != 'dependabot[bot]') }} 
+        if: ${{ always() && !contains(inputs.excluded_jobs, 'gitleaks') && (github.actor != 'dependabot[bot]') }} 
         uses: gitleaks/gitleaks-action@v1.6.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
