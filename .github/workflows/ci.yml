@@ -222,12 +222,12 @@ jobs:
         id: dependency_scan
         if: ${{ always() && !contains( inputs.excluded_jobs, 'dependency_scan' ) && (github.actor != 'dependabot[bot]') }}
         run: |
-          osv-scanner --format table --config=/root/configs/osv/config.toml --sbom=bom.xml | tee osv_report.md
+          osv-scanner --format markdown --config=/root/configs/osv/config.toml --sbom=bom.xml | tee osv_report.md
 
           echo "report<<EOF" >> $GITHUB_OUTPUT
           cat osv_report.md >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-          echo -n "{\"body\":\"*OSV Dependency Scan Report*\nThe following vulnerabilities has been detected in the code. Please resolve these before merging the pull request.\n\n" > result.json
+          echo -n "{\"body\":\"## OSV Dependency Scan Report\nThe following vulnerabilities has been detected in the code. Please resolve these before merging the pull request.\n\n" > result.json
           cat osv_report.md >> result.json
           echo "\"}" >> result.json
           curl -X POST -H "Accept: application/vnd.github+json" \
