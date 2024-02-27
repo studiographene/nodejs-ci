@@ -225,7 +225,8 @@ jobs:
           osv-scanner --format markdown --config=/root/configs/osv/config.toml --sbom=bom.xml | tee osv_report.md
 
           echo "report<<EOF" >> $GITHUB_OUTPUT
-          cat osv_report.md >> $GITHUB_OUTPUT
+          echo -e "$(head -n 1 osv_report.txt)\n" >> $GITHUB_OUTPUT
+          tail -n +2 osv_report.txt >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
           echo -n "{\"body\":\"## OSV Dependency Scan Report\nThe following vulnerabilities has been detected in the code. Please resolve these before merging the pull request.\n\n" > result.json
           cat osv_report.md >> result.json
@@ -235,12 +236,12 @@ jobs:
             -H "Authorization: Bearer ${{secrets.GITHUB_TOKEN}}" \
             ${{ github.event.pull_request.comments_url }} \
             -d @result.json
-          exit $OSV_EXIT_CODE 
-      - name: Upload OSV report
-        uses: actions/upload-artifact@v3
-        with:
-          name: osv-report
-          path: osv_report.md 
+
+      # - name: Upload OSV report
+      #   uses: actions/upload-artifact@v3
+      #   with:
+      #     name: osv-report
+      #     path: osv_report.md 
 
       # - uses: mshick/add-pr-comment@v2
       #   if: always()
