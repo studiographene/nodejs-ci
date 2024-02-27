@@ -222,7 +222,10 @@ jobs:
         id: dependency_scan
         if: ${{ always() && !contains( inputs.excluded_jobs, 'dependency_scan' ) && (github.actor != 'dependabot[bot]') }}
         run: |
-          osv-scanner --format markdown --config=/root/configs/osv/config.toml --sbom=bom.xml | tee osv_report.md
+          set +e
+          osv-scanner --format markdown fail-on-vuln true --config=/root/configs/osv/config.toml --sbom=bom.xml | tee osv_report.md
+          OSV_EXIT_CODE=$?
+          set -e
           echo "report<<EOF" >> $GITHUB_OUTPUT
           cat osv_report.md >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
@@ -234,6 +237,7 @@ jobs:
             -H "Authorization: Bearer ${GITHUB_TOKEN}" \
             ${{ github.event.pull_request.comments_url }} \
             -d @result.json
+          exit $OSV_EXIT_CODE 
       # - uses: mshick/add-pr-comment@v2
       #   if: always()
       #   with:
