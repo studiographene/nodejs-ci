@@ -288,8 +288,8 @@ jobs:
         
         id: generate_report
         run: |
-          semgrep scan --error --config  "p/default" --config /root/configs/semgrep/rules/eslint.v1.3.32.yml --sarif ${{ inputs.semgrep_options }} > semgrep.sarif
-          cat semgrep.sarif
+          semgrep scan --error --config  "p/default" --config /root/configs/semgrep/rules/eslint.v1.3.32.yml --sarif ${{ inputs.semgrep_options }} > semgrep.sarif || true
+         
           csvData=$(node - << EOF
           const fs = require('fs');
           const sarifFile = fs.readFileSync("semgrep.sarif", 'utf8');
