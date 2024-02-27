@@ -222,22 +222,27 @@ jobs:
         id: dependency_scan
         if: ${{ always() && !contains( inputs.excluded_jobs, 'dependency_scan' ) && (github.actor != 'dependabot[bot]') }}
         run: |
-          osv-scanner --format table --config=/root/configs/osv/config.toml --sbom=bom.xml | tee osv_report.txt
+          osv-scanner --format markdown --config=/root/configs/osv/config.toml --sbom=bom.xml | tee osv_report.md
           echo "report<<EOF" >> $GITHUB_OUTPUT
-          cat osv_report.txt >> $GITHUB_OUTPUT
+          cat osv_report.md >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-      - uses: mshick/add-pr-comment@v2
-        if: always()
-        with:
-            message-id: dependency-scan
-            message: |
-              ### Dependency Scan Report 
+          curl -X POST -H "Accept: application/vnd.github+json" \
+          -H "X-GitHub-Api-Version: 2022-11-28" \
+          -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+          ${{ github.event.pull_request.comments_url }} \
+          -d @osv_report.md
+      # - uses: mshick/add-pr-comment@v2
+      #   if: always()
+      #   with:
+      #       message-id: dependency-scan
+      #       message: |
+      #         ### Dependency Scan Report 
         
-              Below are the vulnerabalities in packages found by the dependency scan: 
+      #         Below are the vulnerabalities in packages found by the dependency scan: 
         
-              ```
-              ${{steps.dependency_scan.outputs.report}}
-              ```
+      #         ```markdown
+      #         ${{steps.dependency_scan.outputs.report}}
+      #         ```
 
 
       - name: after step
@@ -262,26 +267,7 @@ jobs:
         run: |
           ${{ inputs.licensescan_after_step_command}}
 
-  pr_agent:
-    name: Run pr agent on every pull request, respond to user comments
-    if: ${{ !contains( inputs.excluded_jobs, 'pr_agent' ) && (github.actor != 'dependabot[bot]') }}
-    runs-on: ubuntu-latest
-    steps:
-      - name: before step
-        if: ${{ inputs.pr_agent_before_step_command != '' }}
-        run: |
-          ${{ inputs.pr_agent_before_step_command}}
-      - name: PR Agent action step
-        id: pragent
-        uses: Codium-ai/pr-agent@main
-        env:
-          OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: after step
-        if: ${{ inputs.pr_agent_after_step_command != '' }}
-        run: |
-          ${{ inputs.pr_agent_after_step_command}}
-
+ 
 
 
   Independent_security_scans:
