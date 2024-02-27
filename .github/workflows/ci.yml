@@ -225,8 +225,8 @@ jobs:
           osv-scanner --format markdown --config=/root/configs/osv/config.toml --sbom=bom.xml | tee osv_report.md
 
           echo "report<<EOF" >> $GITHUB_OUTPUT
-          echo -e "$(head -n 1 osv_report.txt)\n" >> $GITHUB_OUTPUT
-          tail -n +2 osv_report.txt >> $GITHUB_OUTPUT
+          echo -e "$(head -n 1 osv_report.md)\n" >> $GITHUB_OUTPUT
+          tail -n +2 osv_report.md >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
           echo -n "{\"body\":\"## OSV Dependency Scan Report\nThe following vulnerabilities has been detected in the code. Please resolve these before merging the pull request.\n\n" > result.json
           cat osv_report.md >> result.json
