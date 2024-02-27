@@ -288,8 +288,10 @@ jobs:
         
         id: generate_report
         run: |
+          set +e
           semgrep scan --error --config  "p/default" --config /root/configs/semgrep/rules/eslint.v1.3.32.yml --sarif ${{ inputs.semgrep_options }} > semgrep.sarif || true
-         
+          SEMGREP_EXIT_CODE=$?
+          set -e
           csvData=$(node - << EOF
           const fs = require('fs');
           const sarifFile = fs.readFileSync("semgrep.sarif", 'utf8');
@@ -322,6 +324,7 @@ jobs:
           echo 'report<<EOF' >> $GITHUB_OUTPUT
           echo "$csvData" >> $GITHUB_OUTPUT
           echo 'EOF' >> $GITHUB_OUTPUT
+          exit $SEMGREP_EXIT_CODE
 
       - uses: mshick/add-pr-comment@v2
         if: always()
