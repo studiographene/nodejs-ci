@@ -289,7 +289,7 @@ jobs:
         id: generate_report
         run: |
           set +e
-          semgrep scan --error --config  "p/default" --config /root/configs/semgrep/rules/eslint.v1.3.32.yml --sarif ${{ inputs.semgrep_options }} > semgrep.sarif || true
+          semgrep scan --error --config  "p/default" --config /root/configs/semgrep/rules/eslint.v1.3.32.yml --sarif ${{ inputs.semgrep_options }} > semgrep.sarif 
           SEMGREP_EXIT_CODE=$?
           set -e
           csvData=$(node - << EOF
