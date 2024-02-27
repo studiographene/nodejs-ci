@@ -219,9 +219,27 @@ jobs:
         run: |
           ${{ inputs.osv_before_step_command}}
       - name: Dependency Scan using Google OSV
+        id: dependency_scan
         if: ${{ always() && !contains( inputs.excluded_jobs, 'dependency_scan' ) && (github.actor != 'dependabot[bot]') }}
         run: |
-          osv-scanner --format table --config=/root/configs/osv/config.toml --sbom=bom.xml
+          osv-scanner --format table --config=/root/configs/osv/config.toml --sbom=bom.xml | tee osv_report.txt
+          echo "report<<EOF" >> $GITHUB_OUTPUT
+          cat osv_report.txt >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+      - uses: mshick/add-pr-comment@v2
+        if: always()
+        with:
+            message-id: dependency-scan
+            message: |
+              ### Dependency Scan Report 
+        
+              Below are the vulnerabalities in packages found by the dependency scan: 
+        
+              ```
+              ${{steps.dependency_scan.outputs.report}}
+              ```
+
+
       - name: after step
         if: ${{ inputs.osv_after_step_command != '' }}
         run: |
