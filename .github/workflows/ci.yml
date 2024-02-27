@@ -236,6 +236,12 @@ jobs:
             ${{ github.event.pull_request.comments_url }} \
             -d @result.json
           exit $OSV_EXIT_CODE 
+      - name: Upload OSV report
+        uses: actions/upload-artifact@v3
+        with:
+          name: osv-report
+          path: osv_report.md 
+
       # - uses: mshick/add-pr-comment@v2
       #   if: always()
       #   with:
