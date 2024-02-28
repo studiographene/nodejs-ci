@@ -214,7 +214,10 @@ jobs:
         id: dependency_scan
         if: ${{ always() && !contains( inputs.excluded_jobs, 'dependency_scan' ) && (github.actor != 'dependabot[bot]') }}
         run: |
+          set +e
           osv-scanner --format markdown --config=/root/configs/osv/config.toml --sbom=bom.xml | tee osv_report.md
+          OSV_EXIT_CODE=$?
+          set -e
           echo "## OSV Dependency Scan Report" > result.json
           echo "The following vulnerabilities has been detected in the code. Please resolve these before merging the pull request." >> result.json
           cat osv_report.md >> result.json
@@ -225,6 +228,8 @@ jobs:
            -H "Authorization: Bearer ${{secrets.GITHUB_TOKEN}}" \
            ${{ github.event.pull_request.comments_url }} \
            -d "$comment_body"
+          exit $SEMGREP_EXIT_CODE
+
       - name: License Scan
         env:
           ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
