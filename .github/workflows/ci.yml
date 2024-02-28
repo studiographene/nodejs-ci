@@ -228,7 +228,7 @@ jobs:
            -H "Authorization: Bearer ${{secrets.GITHUB_TOKEN}}" \
            ${{ github.event.pull_request.comments_url }} \
            -d "$comment_body"
-          exit $SEMGREP_EXIT_CODE
+          exit $OSV_EXIT_CODE
 
       - name: License Scan
         env:
