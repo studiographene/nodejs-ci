@@ -223,12 +223,9 @@ jobs:
         if: ${{ always() && !contains( inputs.excluded_jobs, 'dependency_scan' ) && (github.actor != 'dependabot[bot]') }}
         run: |
           osv-scanner --format markdown --config=/root/configs/osv/config.toml --sbom=bom.xml | tee osv_report.md
-          echo "report<<EOF" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
           echo -n "{\"body\":\"## OSV Dependency Scan Report\nThe following vulnerabilities has been detected in the code. Please resolve these before merging the pull request.\n\n" > result.json
-          cat osv_report.md >> results.json
-          echo -e "\n$(cat results.json)" > result.json
-          echo "\"}" >> result.json
+          cat osv_report.md >> result.json
+          echo -e "\n$(cat result.json)" > results.json
           comment_body=$(jq -n --arg body "$(cat result.json)" '{body: $body}')
           curl -X POST -H "Accept: application/vnd.github+json" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
