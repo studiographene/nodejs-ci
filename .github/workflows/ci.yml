@@ -184,7 +184,7 @@ jobs:
     name: SBOM-dependent-scans
     runs-on: ubuntu-latest
     permissions: write-all
-    needs: caching
+    # needs: caching
     strategy:
       fail-fast: false
     container:
