@@ -224,10 +224,11 @@ jobs:
         run: |
           osv-scanner --format markdown --config=/root/configs/osv/config.toml --sbom=bom.xml | tee osv_report.md
           echo -e "## OSV Dependency Scan Report\n\nThe following vulnerabilities have been detected in the code. Please resolve these before merging the pull request.\n\n\`\`\`markdown\n$(cat osv_report.md)\n\`\`\`" > result.json
+          comment_body=$(cat result.json)
           curl -X POST -H "Accept: application/vnd.github.v3+json" \
             -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
             ${{ github.event.pull_request.comments_url }} \
-            -d '{"body": "'"$(cat result.json)"'"}'
+            -d '{"body": "'"$(echo "$comment_body" | sed 's/"/\\"/g')"'" }'
 
   
 
