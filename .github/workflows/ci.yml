@@ -185,6 +185,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions: write-all
     needs: caching
+    strategy:
+      fail-fast: false
     container:
       image: public.ecr.aws/studiographene/ci:node-20-alpine
     steps:
@@ -216,21 +218,21 @@ jobs:
           osv-scanner --format markdown --config=/root/configs/osv/config.toml --sbom=bom.xml > osv_report.md        
           OSV_EXIT_CODE=$?
           set -e
-          echo "## OSV Dependency Scan Report" > result.json
-          echo "### The following vulnerabilities has been detected in the code. Please resolve these before merging the pull request." >> result.json
-          cat osv_report.md >> result.json
-          comment_body=$(jq -n --arg body "$(cat result.json)" '{body: $body}')
-          echo 'report<<EOF' >> $GITHUB_OUTPUT
-          echo "$comment_body" >> $GITHUB_OUTPUT
-          echo 'EOF' >> $GITHUB_OUTPUT
+          echo "osv_report.md=$report" >>$GITHUB_OUTPUT
+        # echo "## OSV Dependency Scan Report" > result.json
+        # echo "### The following vulnerabilities has been detected in the code. Please resolve these before merging the pull request." >> result.json
+        # cat osv_report.md >> result.json
+        # echo "$(cat result.json)" > results.json
+        # echo "report=$(cat results.json)" >> $GITHUB_ENV
           exit $OSV_EXIT_CODE
+
 
       - name: Comment report
         if: always()
         uses: mshick/add-pr-comment@v2
         with:
           message-id: Dependency Scan
-          message: ${{steps.generate_report.outputs.report}}
+          message: ${{ steps.dependency_scan.outputs.report }}
 
 
           # "### Semgrep Report \n
