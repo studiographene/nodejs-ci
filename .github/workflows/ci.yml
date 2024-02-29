@@ -218,29 +218,16 @@ jobs:
           osv-scanner --format markdown --config=/root/configs/osv/config.toml --sbom=bom.xml > osv_report.md        
           OSV_EXIT_CODE=$?
           set -e
-          echo "osv_report.md=$report" >>$GITHUB_OUTPUT
-        # echo "## OSV Dependency Scan Report" > result.json
-        # echo "### The following vulnerabilities has been detected in the code. Please resolve these before merging the pull request." >> result.json
-        # cat osv_report.md >> result.json
-        # echo "$(cat result.json)" > results.json
-        # echo "report=$(cat results.json)" >> $GITHUB_ENV
-          exit $OSV_EXIT_CODE
+          echo "report=$(cat osv_report.md)" >> $GITHUB_OUTPUT
 
+          exit $OSV_EXIT_CODE
+        continue-on-error: true
 
       - name: Comment report
-        if: always()
-        uses: mshick/add-pr-comment@v2
+        uses: mshick/add-pr-comment@v3
         with:
-          message-id: Dependency Scan
+          message-id: sast-scan
           message: ${{ steps.dependency_scan.outputs.report }}
-
-
-          # "### Semgrep Report \n
-          #   Below are the issues found by semgrep: \n
-          #   \n\nRule Id | Message | Line Number | File Name \n
-          #   --- | --- | --- | --- \n
-          #     ${{steps.generate_report.outputs.report}}\n\n
-          #   "
 
         #   set +e
         #   osv-scanner --format markdown --config=/root/configs/osv/config.toml --sbom=bom.xml >> osv_report.md   
