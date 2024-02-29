@@ -214,7 +214,7 @@ jobs:
         id: dependency_scan
         if: ${{ always() && !contains( inputs.excluded_jobs, 'dependency_scan' ) && (github.actor != 'dependabot[bot]') }}
         run: |
-          osv-scanner --format table --config=/root/configs/osv/config.toml --sbom=bom.xml 
+          osv-scanner --format markdown --config=/root/configs/osv/config.toml --sbom=bom.xml 
       #    | tee osv_report.md
       # OSV_EXIT_CODE=$?
       # set -e
