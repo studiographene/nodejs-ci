@@ -219,12 +219,15 @@ jobs:
           OSV_EXIT_CODE=$?
           set -e
           cat osv_report.md >> result.json
-          echo "report=$(cat result.json)" >> $GITHUB_OUTPUT
-
+                    
+          echo 'report<<EOF' >> $GITHUB_OUTPUT
+          echo "osv_report.md" >> $GITHUB_OUTPUT
+          echo 'EOF' >> $GITHUB_OUTPUT
           exit $OSV_EXIT_CODE
 
 
       - name: Comment report
+        if: always()
         uses: mshick/add-pr-comment@v2
         with:
           message-id: sast-scan
