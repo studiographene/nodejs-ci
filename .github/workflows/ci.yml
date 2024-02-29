@@ -222,7 +222,7 @@ jobs:
           echo "### The following vulnerabilities has been detected in the code. Please resolve these before merging the pull request." >> result.json
           cat osv_report.md >> result.json
           echo "$(cat result.json)" > results.json
-          echo "report=$(cat results.json)" >> $GITHUB_OUTPUT
+          echo "report=$(cat results.json)" >> $GITHUB_ENV
           exit $OSV_EXIT_CODE
         continue-on-error: true
 
@@ -230,7 +230,7 @@ jobs:
         uses: mshick/add-pr-comment@v2
         with:
           message-id: Dependency Scan
-          message: ${{ steps.dependency_scan.outputs.report }}
+          message: ${{ env.report }}
 
 
           # "### Semgrep Report \n
