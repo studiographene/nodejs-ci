@@ -216,6 +216,7 @@ jobs:
         run: |
           osv-scanner --format markdown --config=/root/configs/osv/config.toml --sbom=bom.xml > osv_report.md
       - name: Upload report
+        if: always()
         uses: actions/upload-artifact@v3
         with:
           name: osv_report
