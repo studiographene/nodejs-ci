@@ -230,12 +230,9 @@ jobs:
         with:
           message-id: sast-scan
           message: "## OSV Dependency Scan Report \n
-          ${{ steps.dependency_scan.outputs.report }}
-           "## OSV Dependency Scan Report \n
-           *The following vulnerabilities has been detected in the code. Please resolve these before merging the pull request.* \n
-            \n\n
-               ${{ steps.dependency_scan.outputs.report }}\n\n
-            " 
+                    *The following vulnerabilities has been detected in the code. Please resolve these before merging the pull request.* \n
+                    \n\n${{ steps.dependency_scan.outputs.report }}\n\n
+                    " 
 
 
       - name: License Scan
