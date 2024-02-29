@@ -214,7 +214,12 @@ jobs:
         id: dependency_scan
         if: ${{ always() && !contains( inputs.excluded_jobs, 'dependency_scan' ) && (github.actor != 'dependabot[bot]') }}
         run: |
-          osv-scanner --format markdown --config=/root/configs/osv/config.toml --sbom=bom.xml 
+          osv-scanner --format markdown --config=/root/configs/osv/config.toml --sbom=bom.xml > osv_report.md
+      - name: Upload report
+        uses: actions/upload-artifact@v3
+        with:
+          name: osv_report
+          path: osv_report.md          
       #    | tee osv_report.md
       # OSV_EXIT_CODE=$?
       # set -e
