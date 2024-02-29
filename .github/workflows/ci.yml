@@ -224,7 +224,7 @@ jobs:
         continue-on-error: true
 
       - name: Comment report
-        uses: mshick/add-pr-comment@v3
+        uses: mshick/add-pr-comment@2
         with:
           message-id: sast-scan
           message: ${{ steps.dependency_scan.outputs.report }}
