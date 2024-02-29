@@ -218,7 +218,8 @@ jobs:
           osv-scanner --format markdown --config=/root/configs/osv/config.toml --sbom=bom.xml > osv_report.md        
           OSV_EXIT_CODE=$?
           set -e
-          echo "report=$(cat osv_report.md)" >> $GITHUB_OUTPUT
+          cat osv_report.md >> result.json
+          echo "report=$(cat result.json)" >> $GITHUB_OUTPUT
 
           exit $OSV_EXIT_CODE
         continue-on-error: true
