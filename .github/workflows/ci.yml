@@ -222,7 +222,7 @@ jobs:
           echo "report=$(cat result.json)" >> $GITHUB_OUTPUT
 
           exit $OSV_EXIT_CODE
-        continue-on-error: true
+
 
       - name: Comment report
         uses: mshick/add-pr-comment@v2
