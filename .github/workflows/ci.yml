@@ -221,7 +221,7 @@ jobs:
           cat osv_report.md >> result.json
                     
           echo 'report<<EOF' >> $GITHUB_OUTPUT
-          echo "osv_report.md" >> $GITHUB_OUTPUT
+          echo osv_report.md >> $GITHUB_OUTPUT
           echo 'EOF' >> $GITHUB_OUTPUT
           exit $OSV_EXIT_CODE
 
