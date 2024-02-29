@@ -230,7 +230,7 @@ jobs:
         with:
           message-id: sast-scan
           message: "## OSV Dependency Scan Report \n
-                    *The following vulnerabilities has been detected in the code. Please resolve these before merging the pull request.* \n
+                    ### The following vulnerabilities has been detected in the code. Please resolve these before merging the pull request. \n
                     \n\n${{ steps.dependency_scan.outputs.report }}\n\n
                     " 
 
@@ -341,7 +341,7 @@ jobs:
       permissions: write-all
       needs: caching
       container:
-        image: public.ecr.aws/studiographene/ci:node-20-alpine
+        image: public.ecr.aws/studiographene/ci:node-20-alpine-v1.0.4
       steps:
         - name: Checkout
           uses: actions/checkout@v3
