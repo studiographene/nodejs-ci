@@ -388,7 +388,7 @@ jobs:
           
 
   pr_agent:
-    name: Run pr agent on every pull request, respond to user comments
+    name: Codium PR Agent Scan
     if: ${{ !contains( inputs.excluded_jobs, 'pr_agent' ) && (github.actor != 'dependabot[bot]') }}
     runs-on: ubuntu-latest
     steps:
