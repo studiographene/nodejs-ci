@@ -220,16 +220,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           
-      - name: License Scan
-        env:
-          ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ github.event.number }}
-          PROJECT_NAME: ${{ github.event.repository.name }}
-          PROJECT_OWNER: ${{ github.repository_owner }}
-        if: ${{ always() && !contains( inputs.excluded_jobs, 'licenseScan' ) && (github.actor != 'dependabot[bot]') }}
-        run: |
-          /root/executables/ci-utility check --sbom bom.xml --allowedLicences ${{ inputs.allowedLicenses }}
-
       - name: Download LockFile Artifact
         if:  always()
         uses: actions/download-artifact@v2
@@ -244,6 +234,16 @@ jobs:
           FETCH_LICENSE: true
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CDXGEN_DEBUG_MODE: debug
+          
+      - name: License Scan
+        env:
+          ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.number }}
+          PROJECT_NAME: ${{ github.event.repository.name }}
+          PROJECT_OWNER: ${{ github.repository_owner }}
+        if: ${{ always() && !contains( inputs.excluded_jobs, 'licenseScan' ) && (github.actor != 'dependabot[bot]') }}
+        run: |
+          /root/executables/ci-utility check --sbom bom.xml --allowedLicences ${{ inputs.allowedLicenses }}          
 
       - name: Dependency Scan using Google OSV
         id: dependency_scan
