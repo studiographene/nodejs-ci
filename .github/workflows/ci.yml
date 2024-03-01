@@ -147,6 +147,8 @@ jobs:
   Security-scans:
     runs-on: ubuntu-latest
     permissions: write-all
+    needs: caching
+    
 
     container:
       image: public.ecr.aws/studiographene/ci:node-20-alpine
@@ -234,7 +236,7 @@ jobs:
           FETCH_LICENSE: true
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CDXGEN_DEBUG_MODE: debug
-          
+
       - name: License Scan
         env:
           ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
