@@ -231,11 +231,13 @@ jobs:
           /root/executables/ci-utility check --sbom bom.xml --allowedLicences ${{ inputs.allowedLicenses }}
 
       - name: Download LockFile Artifact
+        if:  always()
         uses: actions/download-artifact@v2
         with:
           name: lockFile
           path: .
       - name:  Generate SBOM using CycloneDX
+        if: always ()
         run: |
           cdxgen --no-recurse -o bom.xml -p
         env:
