@@ -43,34 +43,10 @@ on:
       semgrep_options:
         type: string
         default: ""
-      semgrep_before_step_command:
+      security_scan_before_step_command:
         type: string
         default: ""
-      semgrep_after_step_command:
-        type: string
-        default: ""
-      sbom_before_step_command:
-        type: string
-        default: ""
-      sbom_after_step_command:
-        type: string
-        default: ""
-      osv_before_step_command:
-        type: string
-        default: ""
-      osv_after_step_command:
-        type: string
-        default: ""
-      licensescan_before_step_command:
-        type: string
-        default: ""
-      licensescan_after_step_command:
-        type: string
-        default: ""
-      gitleaks_before_step_command:
-        type: string
-        default: ""
-      gitleaks_after_step_command:
+      security_scan_after_step_command:
         type: string
         default: ""
       pr_agent_before_step_command:
@@ -85,24 +61,12 @@ on:
       caching_after_step_command:
         type: string
         default: ""
-      docker_before_step_command:
+      technology_based_scans_before_step_command:  
         type: string
         default: ""
-      docker_after_step_command:
+      technology_based_scans_after_step_command:  
         type: string
-        default: ""
-      lint_before_step_command:
-        type: string
-        default: ""
-      lint_after_step_command:
-        type: string
-        default: ""
-      build_before_step_command:
-        type: string
-        default: ""
-      build_after_step_command:
-        type: string
-        default: ""
+        default: ""        
 
 jobs:
   caching:
@@ -178,79 +142,6 @@ jobs:
         run: |
           ${{ inputs.caching_after_step_command}}
 
-  
-
-  SBOM-dependent-scans:
-    name: SBOM-dependent-scans
-    runs-on: ubuntu-latest
-    permissions: write-all
-    needs: caching
-    strategy:
-      fail-fast: false
-    container:
-      image: public.ecr.aws/studiographene/ci:node-20-alpine
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ github.REF }}
-      - name: bom_before_step
-        if: ${{ inputs.sbom_before_step_command != '' }}
-        run: |
-          ${{ inputs.sbom_before_step_command}}
-      - name: Download LockFile Artifact
-        uses: actions/download-artifact@v2
-        with:
-          name: lockFile
-          path: .
-      - name:  Generate SBOM using CycloneDX
-        run: |
-          cdxgen --no-recurse -o bom.xml -p
-        env:
-          FETCH_LICENSE: true
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CDXGEN_DEBUG_MODE: debug
-      - name: Dependency Scan using Google OSV
-        id: dependency_scan
-        if: ${{ always() && !contains( inputs.excluded_jobs, 'dependency_scan' ) && (github.actor != 'dependabot[bot]') }}
-        run: |
-          set +e
-          osv-scanner --format markdown --config=/root/configs/osv/config.toml --sbom=bom.xml > osv_report.md        
-          OSV_EXIT_CODE=$?
-          set -e          
-          echo 'report<<EOF' >> $GITHUB_OUTPUT
-          cat osv_report.md >> $GITHUB_OUTPUT
-          echo 'EOF' >> $GITHUB_OUTPUT
-          exit $OSV_EXIT_CODE
-
-
-      - name: Comment report
-        if: always()
-        uses: mshick/add-pr-comment@v2
-        with:
-          message-id: sast-scan
-          message: "## OSV Dependency Scan Report \n
-                    ### The following vulnerabilities has been detected in the code. Please resolve these before merging the pull request. \n
-                    \n\n${{ steps.dependency_scan.outputs.report }}\n\n
-                    " 
-
-
-      - name: License Scan
-        env:
-          ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ github.event.number }}
-          PROJECT_NAME: ${{ github.event.repository.name }}
-          PROJECT_OWNER: ${{ github.repository_owner }}
-        if: ${{ always() && !contains( inputs.excluded_jobs, 'licenseScan' ) && (github.actor != 'dependabot[bot]') }}
-        run: |
-          /root/executables/ci-utility check --sbom bom.xml --allowedLicences ${{ inputs.allowedLicenses }}
-      - name: after step
-        if: ${{ inputs.sbom_after_step_command != '' }}
-        run: |
-          ${{ inputs.sbom_after_step_command}}          
-
-
- 
 
 
   Security-scans:
@@ -266,9 +157,9 @@ jobs:
           ref: ${{ github.REF }}
 
       - name: Security scans before step
-        if: ${{ inputs.semgrep_before_step_command != '' }}
+        if: ${{ inputs.security_scan_before_step_command != '' }}
         run: |
-          ${{ inputs.semgrep_before_step_command}}
+          ${{ inputs.security_scan_before_step_command}}
 
       - name: SAST Scan
         if: ${{ always() && !contains(inputs.excluded_jobs, 'sast') && (github.actor != 'dependabot[bot]') }}
@@ -328,11 +219,56 @@ jobs:
         uses: gitleaks/gitleaks-action@v1.6.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: after step
-        if: ${{ inputs.gitleaks_after_step_command != '' }}
+          
+      - name: License Scan
+        env:
+          ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.number }}
+          PROJECT_NAME: ${{ github.event.repository.name }}
+          PROJECT_OWNER: ${{ github.repository_owner }}
+        if: ${{ always() && !contains( inputs.excluded_jobs, 'licenseScan' ) && (github.actor != 'dependabot[bot]') }}
         run: |
-          ${{ inputs.gitleaks_after_step_command }}          
+          /root/executables/ci-utility check --sbom bom.xml --allowedLicences ${{ inputs.allowedLicenses }}
 
+      - name: Download LockFile Artifact
+        uses: actions/download-artifact@v2
+        with:
+          name: lockFile
+          path: .
+      - name:  Generate SBOM using CycloneDX
+        run: |
+          cdxgen --no-recurse -o bom.xml -p
+        env:
+          FETCH_LICENSE: true
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CDXGEN_DEBUG_MODE: debug
+
+      - name: Dependency Scan using Google OSV
+        id: dependency_scan
+        if: ${{ always() && !contains( inputs.excluded_jobs, 'dependency_scan' ) && (github.actor != 'dependabot[bot]') }}
+        run: |
+          set +e
+          osv-scanner --format markdown --config=/root/configs/osv/config.toml --sbom=bom.xml > osv_report.md        
+          OSV_EXIT_CODE=$?
+          set -e          
+          echo 'report<<EOF' >> $GITHUB_OUTPUT
+          cat osv_report.md >> $GITHUB_OUTPUT
+          echo 'EOF' >> $GITHUB_OUTPUT
+          exit $OSV_EXIT_CODE
+
+      - name: Comment report
+        if: always()
+        uses: mshick/add-pr-comment@v2
+        with:
+          message-id: dependency_scan
+          message: "## OSV Dependency Scan Report \n
+                    ### The following vulnerabilities has been detected in the code. Please resolve these before merging the pull request. \n
+                    \n\n${{ steps.dependency_scan.outputs.report }}\n\n
+                    " 
+      - name: Security scans after step
+        if: ${{ inputs.security_scan_after_step_command != '' }}
+        run: |
+          ${{ inputs.security_scan_after_step_command }}                     
 
 
   Technology_based_scans:
@@ -347,10 +283,10 @@ jobs:
           uses: actions/checkout@v3
           with:
             ref: ${{ github.REF }}
-        - name: before step
-          if: ${{ inputs.lint_before_step_command != '' }}
+        - name: Technology based scans before step
+          if: ${{ inputs.technology_based_scans_before_step_command != '' }}
           run: |
-            ${{ inputs.lint_before_step_command}}
+            ${{ inputs.technology_based_scans_before_step_command}}
         - name: Cache npm modules
           uses: actions/cache@v3
           if: inputs.package_manager == 'npm'
@@ -384,14 +320,6 @@ jobs:
           if: ${{ always() && !contains( inputs.excluded_jobs, 'lint' ) && (github.actor != 'dependabot[bot]') }}
           run: |
             ${{ inputs.lint_command }}
-        - name: after step
-          if: ${{ inputs.lint_after_step_command != '' }}
-          run: |
-            ${{ inputs.lint_after_step_command }}  
-            - name: before step
-            if: ${{ inputs.docker_before_step_command != '' }}
-            run: |
-              ${{ inputs.docker_before_step_command }}
         - name: Docker Build
           if: ${{ always() && !contains( inputs.excluded_jobs, 'docker' ) && (github.actor != 'dependabot[bot]') }}
           run: |
@@ -449,22 +377,32 @@ jobs:
               -H "Authorization: Bearer ${GITHUB_TOKEN}" \
               ${{ github.event.pull_request.comments_url }} \
               -d @result.json
-        - name: after step
-          if: ${{ inputs.docker_after_step_command != '' }}
-          run: |
-            ${{ inputs.docker_after_step_command }} 
-            - name: before step
-            if: ${{ inputs.build_before_step_command != '' }}
-            run: |
-              ${{ inputs.build_before_step_command}}
         - name: Build project
           if: ${{always() && !contains( inputs.excluded_jobs, 'build' ) && (github.actor != 'dependabot[bot]') }}
           run: |
             ${{ inputs.build_command }}
-        - name: after step
-          if: ${{ inputs.build_after_step_command != '' }}
+        - name: Technology based scans after step
+          if: ${{ inputs.technology_based_scans_after_step_command != '' }}
           run: |
-            ${{ inputs.build_after_step_command }}                               
-            
+            ${{ inputs.technology_based_scans_after_step_command}}
           
 
+  pr_agent:
+    name: Run pr agent on every pull request, respond to user comments
+    if: ${{ !contains( inputs.excluded_jobs, 'pr_agent' ) && (github.actor != 'dependabot[bot]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: before step
+        if: ${{ inputs.pr_agent_before_step_command != '' }}
+        run: |
+          ${{ inputs.pr_agent_before_step_command}}
+      - name: PR Agent action step
+        id: pragent
+        uses: Codium-ai/pr-agent@main
+        env:
+          OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: after step
+        if: ${{ inputs.pr_agent_after_step_command != '' }}
+        run: |
+          ${{ inputs.pr_agent_after_step_command}}
