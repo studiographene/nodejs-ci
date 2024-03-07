@@ -628,6 +628,7 @@ jobs:
               run: |
                 ${{ inputs.unit_test_command }} > report.md
             - name: Upload Artifact
+              if: always()
               uses: actions/upload-artifact@v3
               with:
                 name: test-report
