@@ -73,6 +73,7 @@ jobs:
     name: Cache node modules
     runs-on: ubuntu-latest
     permissions: write-all
+    if: ${{!contains(github.actor, 'github-actions[bot]')  && (github.event_name != 'issue_comment') && (github.actor != 'dependabot[bot]') }}
     container:
       image: public.ecr.aws/studiographene/ci:node-20-alpine
     steps:
@@ -148,8 +149,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions: write-all
     needs: caching
-    
-
+    if: ${{!contains(github.actor, 'github-actions[bot]')  && (github.event_name != 'issue_comment') && (github.actor != 'dependabot[bot]') }}
     container:
       image: public.ecr.aws/studiographene/ci:node-20-alpine
     steps:
@@ -164,7 +164,7 @@ jobs:
           ${{ inputs.security_scan_before_step_command}}
 
       - name: SAST Scan
-        if: ${{ always() && !contains(inputs.excluded_jobs, 'sast') && (github.actor != 'dependabot[bot]') }}
+        if: ${{ always() && !contains(inputs.excluded_jobs, 'sast')  }}
         
         id: generate_report
         run: |
@@ -217,7 +217,7 @@ jobs:
               ${{steps.generate_report.outputs.report}}\n\n
             "
       - name: Gitleaks scan
-        if: ${{ always() && !contains(inputs.excluded_jobs, 'gitleaks') && (github.actor != 'dependabot[bot]') }} 
+        if: ${{ always() && !contains(inputs.excluded_jobs, 'gitleaks')  }} 
         uses: gitleaks/gitleaks-action@v1.6.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -243,14 +243,13 @@ jobs:
           PR_NUMBER: ${{ github.event.number }}
           PROJECT_NAME: ${{ github.event.repository.name }}
           PROJECT_OWNER: ${{ github.repository_owner }}
-        if: ${{ always() && !contains( inputs.excluded_jobs, 'licenseScan' ) && (github.actor != 'dependabot[bot]') }}
+        if: ${{ always() && !contains( inputs.excluded_jobs, 'licenseScan' ) }}
         run: |
           /root/executables/ci-utility check --sbom bom.xml --allowedLicences ${{ inputs.allowedLicenses }}          
 
       - name: Dependency Scan using Google OSV
         id: dependency_scan
-        if: ${{ always() && !contains( inputs.excluded_jobs, 'dependency_scan' ) && (github.actor != 'dependabot[bot]') }}
-        run: |
+        if: ${{ always() && !contains( inputs.excluded_jobs, 'dependency_scan' ) }}
           set +e
           osv-scanner --format markdown --config=/root/configs/osv/config.toml --sbom=bom.xml > osv_report.md        
           OSV_EXIT_CODE=$?
@@ -280,6 +279,7 @@ jobs:
       runs-on: ubuntu-latest
       permissions: write-all
       needs: caching
+      if: ${{!contains(github.actor, 'github-actions[bot]')  && (github.event_name != 'issue_comment') && (github.actor != 'dependabot[bot]') }}
       container:
         image: public.ecr.aws/studiographene/ci:node-20-alpine-v1.0.4
       steps:
@@ -321,11 +321,11 @@ jobs:
           env:
             NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         - name: Eslint scan
-          if: ${{ always() && !contains( inputs.excluded_jobs, 'lint' ) && (github.actor != 'dependabot[bot]') }}
+          if: ${{ always() && !contains( inputs.excluded_jobs, 'lint' )  }}
           run: |
             ${{ inputs.lint_command }}
         - name: Docker Build
-          if: ${{ always() && !contains( inputs.excluded_jobs, 'docker' ) && (github.actor != 'dependabot[bot]') }}
+          if: ${{ always() && !contains( inputs.excluded_jobs, 'docker' ) }}
           run: |
             ${{ inputs.docker_build_command }}
           env:
@@ -382,7 +382,7 @@ jobs:
               ${{ github.event.pull_request.comments_url }} \
               -d @result.json
         - name: Build project
-          if: ${{always() && !contains( inputs.excluded_jobs, 'build' ) && (github.actor != 'dependabot[bot]') }}
+          if: ${{always() && !contains( inputs.excluded_jobs, 'build' )  }}
           run: |
             ${{ inputs.build_command }}
         - name: Technology based scans after step
@@ -393,7 +393,7 @@ jobs:
 
   pr_agent:
     name: Codium PR Agent Scan
-    if: ${{ !contains( inputs.excluded_jobs, 'pr_agent' ) && (github.actor != 'dependabot[bot]') }}
+    if: ${{ !contains( inputs.excluded_jobs, 'pr_agent' ) && (github.actor != 'dependabot[bot]') && !contains(github.actor, 'github-actions[bot]')}}
     runs-on: ubuntu-latest
     steps:
       - name: before step
