@@ -626,13 +626,23 @@ jobs:
             - name: Unit test
               id: unit_test
               run: |
-                ${{ inputs.unit_test_command }} > report.md
-            - name: Upload Artifact
+                ${{ inputs.unit_test_command }} | tee report.txt
+            - name: Test Coverage Comment
+              id: coverageComment
+              uses: MishaKav/jest-coverage-comment@b3268855834f7013ffb51ee780165ec7c0d5ec28
               if: always()
-              uses: actions/upload-artifact@v3
               with:
-                name: test-report
-                path: report.md
+                coverage-summary-path: ./coverage/*
+                title: Coverage Summary
+                badge-title: Coverage
+                hide-comment: false
+                create-new-comment: false
+                hide-summary: false
+                unitxml-title: Junit Summary
+                junitxml-path: ./coverage/*
+                coverage-title: Code coverage Report
+                coverage-path: report.txt                
+
                                       
 
   
