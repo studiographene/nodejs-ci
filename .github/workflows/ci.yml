@@ -73,7 +73,7 @@ jobs:
     name: Cache node modules
     runs-on: ubuntu-latest
     permissions: write-all
-    if: ${{!contains(github.actor, 'github-actions[bot]')  && (github.event_name != 'issue_comment') && (github.actor != 'dependabot[bot]') }}
+    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
     container:
       image: public.ecr.aws/studiographene/ci:node-20-alpine
     steps:
@@ -150,7 +150,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions: write-all
     needs: caching
-    if: ${{!contains(github.actor, 'github-actions[bot]')  && (github.event_name != 'issue_comment') && (github.actor != 'dependabot[bot]') }}
+    if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
     container:
       image: public.ecr.aws/studiographene/ci:node-20-alpine
     steps:
@@ -281,7 +281,7 @@ jobs:
       runs-on: ubuntu-latest
       permissions: write-all
       needs: caching
-      if: ${{!contains(github.actor, 'github-actions[bot]')  && (github.event_name != 'issue_comment') && (github.actor != 'dependabot[bot]') }}
+      if: ${{ !(contains(fromJSON('["github-actions[bot]", "dependabot[bot]"]'), github.actor)) && (github.event_name != 'issue_comment') }}
       container:
         image: public.ecr.aws/studiographene/ci:node-20-alpine-v1.0.4
       steps:
@@ -395,7 +395,7 @@ jobs:
 
   pr_agent:
     name: Codium PR Agent Scan
-    if: ${{ !contains( inputs.excluded_jobs, 'pr_agent' ) && (github.actor != 'dependabot[bot]') && !contains(github.actor, 'github-actions[bot]')}}
+    if: ${{ !contains( inputs.excluded_jobs, 'pr_agent' ) && !(contains(fromJSON('["dependabot[bot]", "github-actions[bot]"]'), github.actor)) }}
     runs-on: ubuntu-latest
     steps:
       - name: before step
