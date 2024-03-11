@@ -15,6 +15,7 @@ name: sg-ci
 
 on:
   pull_request: {}
+  issue_comment:
 
 jobs:
   ci:
@@ -91,6 +92,8 @@ jobs:
 | lint_command             | lint command for the project                                                | `npm run lint`                   |
 | allowedLicenses          | A file containing allowed licenses name in License scan finding             |                                  |
 | semgrep_options          |                                                                             |                                  |
+security_scan_before_step_command    | Optional commands to pass before secuirty scan steps |                               |
+security_scan_after_step_command    | Optional commands to pass after secuirty scan steps |                               |
 
 ---
 
