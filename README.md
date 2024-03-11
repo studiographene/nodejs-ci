@@ -103,14 +103,18 @@ pr_agent_before_step_command    | Optional commands to pass before Codium PR age
 ---
 
 ### Jobs list:
+#### Jobs have nested steps which are running the mentioned scans.
 
-- sast
-- dependency_scan
-- licenseScan
-- gitleaks
-- lint
-- build
-- docker
-- pr_agent
+- Security scans
+  - SAST Scan
+  - Gitleaks scan
+  - License Scan
+  - Dependency Scan using Google OSV
+- Technology based scans
+  - Eslint scan
+  - Docker Build
+  - Trivy container vulnerability scan
+  - Build project
+- Codium PR Agent Scan
 - dependencies_report_pulse
 - sast_report_pulse

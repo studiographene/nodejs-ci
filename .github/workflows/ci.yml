@@ -146,6 +146,7 @@ jobs:
 
 
   Security-scans:
+    name: Security scans
     runs-on: ubuntu-latest
     permissions: write-all
     needs: caching
@@ -276,7 +277,7 @@ jobs:
 
 
   Technology_based_scans:
-      name: Scans based on technology
+      name: Technology based scans
       runs-on: ubuntu-latest
       permissions: write-all
       needs: caching
