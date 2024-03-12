@@ -333,6 +333,7 @@ jobs:
           env:
             NPM_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         - name: Creating Trivy report PR comment template file
+          if: ${{ always() && !contains( inputs.excluded_jobs, 'docker' ) }}
           run: |
             cat <<EOF >> prcomment.tpl 
             | Package | Vulnerability | Severity | Status | Installed Version | Fixed Version | Title | \n
@@ -346,6 +347,7 @@ jobs:
         - name: Trivy container vulnerability scan
           id: container_scan
           uses: aquasecurity/trivy-action@master
+          if: ${{ always() && !contains( inputs.excluded_jobs, 'docker' ) }}
           with:
             image-ref: ${{ inputs.docker_build_image_id }}
             format: "template"
@@ -358,7 +360,7 @@ jobs:
             scanners: ${{ inputs.CONTAINER_SCANNERS }}
             skip-dirs: ${{ inputs.CONTAINER_SCAN_SKIP_DIRS }}
         - name: Report vulnerabilities in PR
-          if: failure() && steps.container_scan.outcome == 'failure'
+          if: ${{ failure() && steps.container_scan.outcome == 'failure' && !contains( inputs.excluded_jobs, 'docker' ) }}
           env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           shell: bash
@@ -372,7 +374,7 @@ jobs:
               ${{ github.event.pull_request.comments_url }} \
               -d @result.json
         - name: Report no vulnerabilities in PR
-          if: success() && steps.container_scan.outcome == 'success'
+          if: ${{ success() && steps.container_scan.outcome == 'success' && !contains( inputs.excluded_jobs, 'docker' ) }}
           env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           shell: bash
