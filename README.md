@@ -15,6 +15,7 @@ name: sg-ci
 
 on:
   pull_request: {}
+  issue_comment:
 
 jobs:
   ci:
@@ -91,18 +92,29 @@ jobs:
 | lint_command             | lint command for the project                                                | `npm run lint`                   |
 | allowedLicenses          | A file containing allowed licenses name in License scan finding             |                                  |
 | semgrep_options          |                                                                             |                                  |
-
+security_scan_before_step_command    | Optional commands to pass before secuirty scan job |                               |
+security_scan_after_step_command    | Optional commands to pass after secuirty scan job steps execution |                               |
+caching_before_step_command    | Optional commands to pass before caching job steps execution |                   |
+caching_after_step_command    | Optional commands to pass after caching job steps execution |                   |
+technology_based_scans_before_step_command    | Optional commands to pass before techology based scans job steps execution |                   |
+technology_based_scans_after_step_command    | Optional commands to pass after techology based scans job steps execution |                   |
+pr_agent_before_step_command    | Optional commands to pass before Codium PR agent job steps execution |                   |
+ pr_agent_after_step_command    | Optional commands to pass after Codium PR agent job steps execution |                   |
 ---
 
 ### Jobs list:
+#### Jobs have nested steps which are running the mentioned scans.
 
-- sast
-- dependency_scan
-- licenseScan
-- gitleaks
-- lint
-- build
-- docker
-- pr_agent
+- Security scans
+  - SAST Scan
+  - Gitleaks scan
+  - License Scan
+  - Dependency Scan using Google OSV
+- Technology based scans
+  - Eslint scan
+  - Docker Build
+  - Trivy container vulnerability scan
+  - Build project
+- Codium PR Agent Scan
 - dependencies_report_pulse
 - sast_report_pulse
