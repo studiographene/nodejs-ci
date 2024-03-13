@@ -249,7 +249,7 @@ jobs:
            if [ ! -f $(pwd)/allowed_licenses.txt ]; then
              touch $(pwd)/allowed_licenses.txt
            fi
-          /root/executables/ci-utility check --sbom bom.xml --allowedLicences ${{ inputs.allowedLicenses }}          
+           /root/executables/ci-utility check --sbom bom.xml --allowedLicences ${{ inputs.allowedLicenses }}          
 
       - name: Dependency Scan using Google OSV
         id: dependency_scan
