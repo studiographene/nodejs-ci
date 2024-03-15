@@ -163,10 +163,9 @@ jobs:
         if: ${{ inputs.security_scan_before_step_command != '' }}
         run: |
           ${{ inputs.security_scan_before_step_command}}
-      - name: SAST Scan
-        if: ${{ always() && !contains(inputs.excluded_jobs, 'sast')  }}
-        
-        id: generate_sast_report
+      - name: SAST Scan using Semgrep
+        id: sast_scan
+        if: ${{ always() && !contains( inputs.excluded_jobs, 'sast_scan' ) }}
         run: |
           set +e
           semgrep scan --error --config  "p/default" --config /root/configs/semgrep/rules/eslint.v1.3.32.yml --sarif ${{ inputs.semgrep_options }} > semgrep.sarif 
@@ -194,22 +193,12 @@ jobs:
             }
           }                  
           // Write the CSV data to a Markdown file
-          fs.writeFileSync('csvData.md', tableData.join('\n'));
+          fs.writeFileSync('semgrep_report.md', tableData.join('\n'));
           EOF
-          echo "report=$(cat csvData.md)" >> $GITHUB_ENV
+          echo 'report<<EOF' >> $GITHUB_OUTPUT
+          cat semgrep_report.md >> $GITHUB_OUTPUT
+          echo 'EOF' >> $GITHUB_OUTPUT
           exit $SEMGREP_EXIT_CODE
-
-      - uses: mshick/add-pr-comment@v2
-        if: always()
-        with:
-          message-id: sast-scan
-          message: |
-            ### Semgrep Report 
-            Below are the issues found by semgrep: 
-
-            Rule Id | Severity | Message | Line Number | File Name 
-            --- | --- | --- | --- | --- 
-            ${{ env.report }}
   #           "
   #     - name: Gitleaks scan
   #       if: ${{ always() && !contains(inputs.excluded_jobs, 'gitleaks')  }} 
