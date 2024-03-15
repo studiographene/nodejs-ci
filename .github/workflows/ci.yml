@@ -145,135 +145,135 @@ jobs:
 
 
 
-  Security-scans:
-    name: Security scans
-    runs-on: ubuntu-latest
-    permissions: write-all
-    # needs: caching
-    if: ${{!contains(github.actor, 'github-actions[bot]')  && (github.event_name != 'issue_comment') && (github.actor != 'dependabot[bot]') }}
-    container:
-      image: public.ecr.aws/studiographene/ci:node-20-alpine
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v3
-        with:
-          ref: ${{ github.REF }}
+  # Security-scans:
+  #   name: Security scans
+  #   runs-on: ubuntu-latest
+  #   permissions: write-all
+  #   # needs: caching
+  #   if: ${{!contains(github.actor, 'github-actions[bot]')  && (github.event_name != 'issue_comment') && (github.actor != 'dependabot[bot]') }}
+  #   container:
+  #     image: public.ecr.aws/studiographene/ci:node-20-alpine
+  #   steps:
+  #     - name: Checkout
+  #       uses: actions/checkout@v3
+  #       with:
+  #         ref: ${{ github.REF }}
 
-      - name: Security scans before step
-        if: ${{ inputs.security_scan_before_step_command != '' }}
-        run: |
-          ${{ inputs.security_scan_before_step_command}}
+  #     - name: Security scans before step
+  #       if: ${{ inputs.security_scan_before_step_command != '' }}
+  #       run: |
+  #         ${{ inputs.security_scan_before_step_command}}
 
-      - name: SAST Scan
-        if: ${{ always() && !contains(inputs.excluded_jobs, 'sast')  }}
+  #     - name: SAST Scan
+  #       if: ${{ always() && !contains(inputs.excluded_jobs, 'sast')  }}
         
-        id: generate_report
-        run: |
-          set +e
-          semgrep scan --error --config  "p/default" --config /root/configs/semgrep/rules/eslint.v1.3.32.yml --sarif ${{ inputs.semgrep_options }} > semgrep.sarif 
-          SEMGREP_EXIT_CODE=$?
-          set -e
-          csvData=$(node - << EOF
-          const fs = require('fs');
-          const sarifFile = fs.readFileSync("semgrep.sarif", 'utf8');
-          const sarifData = JSON.parse(sarifFile);
+  #       id: generate_report
+  #       run: |
+  #         set +e
+  #         semgrep scan --error --config  "p/default" --config /root/configs/semgrep/rules/eslint.v1.3.32.yml --sarif ${{ inputs.semgrep_options }} > semgrep.sarif 
+  #         SEMGREP_EXIT_CODE=$?
+  #         set -e
+  #         csvData=$(node - << EOF
+  #         const fs = require('fs');
+  #         const sarifFile = fs.readFileSync("semgrep.sarif", 'utf8');
+  #         const sarifData = JSON.parse(sarifFile);
 
-          const tableData = [];
+  #         const tableData = [];
 
-          for (const run of sarifData.runs) {
-            for (const result of run.results) {
-              let ruleId = result.ruleId.replaceAll(',',';');
-              ruleId = ruleId.replaceAll('\n','');
-              let message = result.message.text.replaceAll(',', ';');
-              message = message.replaceAll('\n','');
-              const severity = result.level;
-              const location = result.locations[0].physicalLocation;
-              const lineNumber = location.region.startLine;
-              const fileName = location.artifactLocation.uri;
-              // Add data to the tableData array
-              tableData.push(ruleId + "|" + message +"|" + lineNumber + "|" + fileName);
-            }
-          }                  
-          // Log the CSV data as a string
-          const csvData = tableData.join('\n');
-          console.log(csvData);
-          EOF
-          )
+  #         for (const run of sarifData.runs) {
+  #           for (const result of run.results) {
+  #             let ruleId = result.ruleId.replaceAll(',',';');
+  #             ruleId = ruleId.replaceAll('\n','');
+  #             let message = result.message.text.replaceAll(',', ';');
+  #             message = message.replaceAll('\n','');
+  #             const severity = result.level;
+  #             const location = result.locations[0].physicalLocation;
+  #             const lineNumber = location.region.startLine;
+  #             const fileName = location.artifactLocation.uri;
+  #             // Add data to the tableData array
+  #             tableData.push(ruleId + "|" + message +"|" + lineNumber + "|" + fileName);
+  #           }
+  #         }                  
+  #         // Log the CSV data as a string
+  #         const csvData = tableData.join('\n');
+  #         console.log(csvData);
+  #         EOF
+  #         )
 
-          # Append the CSV data to the output file
-          echo 'generating report'
-          echo 'report<<EOF' >> $GITHUB_OUTPUT
-          echo "$csvData" >> $GITHUB_OUTPUT
-          echo 'EOF' >> $GITHUB_OUTPUT
-          exit $SEMGREP_EXIT_CODE
+  #         # Append the CSV data to the output file
+  #         echo 'generating report'
+  #         echo 'report<<EOF' >> $GITHUB_OUTPUT
+  #         echo "$csvData" >> $GITHUB_OUTPUT
+  #         echo 'EOF' >> $GITHUB_OUTPUT
+  #         exit $SEMGREP_EXIT_CODE
 
-      - uses: mshick/add-pr-comment@v2
-        if: always()
-        with:
-          message-id: sast-scan
-          message: "### Semgrep Report \n
-            Below are the issues found by semgrep: \n
-            \n\nRule Id | Message | Line Number | File Name \n
-            --- | --- | --- | --- \n
-              ${{steps.generate_report.outputs.report}}\n\n
-            "
-      - name: Gitleaks scan
-        if: ${{ always() && !contains(inputs.excluded_jobs, 'gitleaks')  }} 
-        uses: gitleaks/gitleaks-action@v1.6.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #     - uses: mshick/add-pr-comment@v2
+  #       if: always()
+  #       with:
+  #         message-id: sast-scan
+  #         message: "### Semgrep Report \n
+  #           Below are the issues found by semgrep: \n
+  #           \n\nRule Id | Message | Line Number | File Name \n
+  #           --- | --- | --- | --- \n
+  #             ${{steps.generate_report.outputs.report}}\n\n
+  #           "
+  #     - name: Gitleaks scan
+  #       if: ${{ always() && !contains(inputs.excluded_jobs, 'gitleaks')  }} 
+  #       uses: gitleaks/gitleaks-action@v1.6.0
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           
-      - name: Download LockFile Artifact
-        if:  always()
-        uses: actions/download-artifact@v2
-        with:
-          name: lockFile
-          path: .
-      - name:  Generate SBOM using CycloneDX
-        if: always ()
-        run: |
-          cdxgen --no-recurse -o bom.xml -p
-        env:
-          FETCH_LICENSE: true
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          CDXGEN_DEBUG_MODE: debug
+  #     - name: Download LockFile Artifact
+  #       if:  always()
+  #       uses: actions/download-artifact@v2
+  #       with:
+  #         name: lockFile
+  #         path: .
+  #     - name:  Generate SBOM using CycloneDX
+  #       if: always ()
+  #       run: |
+  #         cdxgen --no-recurse -o bom.xml -p
+  #       env:
+  #         FETCH_LICENSE: true
+  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #         CDXGEN_DEBUG_MODE: debug
 
-      - name: License Scan
-        env:
-          ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PR_NUMBER: ${{ github.event.number }}
-          PROJECT_NAME: ${{ github.event.repository.name }}
-          PROJECT_OWNER: ${{ github.repository_owner }}
-        if: ${{ always() && !contains( inputs.excluded_jobs, 'licenseScan' ) }}
-        run: |
-          /root/executables/ci-utility check --sbom bom.xml --allowedLicences ${{ inputs.allowedLicenses }}          
+  #     - name: License Scan
+  #       env:
+  #         ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+  #         PR_NUMBER: ${{ github.event.number }}
+  #         PROJECT_NAME: ${{ github.event.repository.name }}
+  #         PROJECT_OWNER: ${{ github.repository_owner }}
+  #       if: ${{ always() && !contains( inputs.excluded_jobs, 'licenseScan' ) }}
+  #       run: |
+  #         /root/executables/ci-utility check --sbom bom.xml --allowedLicences ${{ inputs.allowedLicenses }}          
 
-      - name: Dependency Scan using Google OSV
-        id: dependency_scan
-        if: ${{ always() && !contains( inputs.excluded_jobs, 'dependency_scan' ) }}
-        run: |
-          set +e
-          osv-scanner --format markdown --config=/root/configs/osv/config.toml --sbom=bom.xml > osv_report.md        
-          OSV_EXIT_CODE=$?
-          set -e          
-          echo 'report<<EOF' >> $GITHUB_OUTPUT
-          cat osv_report.md >> $GITHUB_OUTPUT
-          echo 'EOF' >> $GITHUB_OUTPUT
-          exit $OSV_EXIT_CODE
+  #     - name: Dependency Scan using Google OSV
+  #       id: dependency_scan
+  #       if: ${{ always() && !contains( inputs.excluded_jobs, 'dependency_scan' ) }}
+  #       run: |
+  #         set +e
+  #         osv-scanner --format markdown --config=/root/configs/osv/config.toml --sbom=bom.xml > osv_report.md        
+  #         OSV_EXIT_CODE=$?
+  #         set -e          
+  #         echo 'report<<EOF' >> $GITHUB_OUTPUT
+  #         cat osv_report.md >> $GITHUB_OUTPUT
+  #         echo 'EOF' >> $GITHUB_OUTPUT
+  #         exit $OSV_EXIT_CODE
 
-      - name: Comment report
-        if: always()
-        uses: mshick/add-pr-comment@v2
-        with:
-          message-id: dependency_scan
-          message: "## OSV Dependency Scan Report \n
-                    ### The following vulnerabilities has been detected in the code. Please resolve these before merging the pull request. \n
-                    \n\n${{ steps.dependency_scan.outputs.report }}\n\n
-                    " 
-      - name: Security scans after step
-        if: ${{ inputs.security_scan_after_step_command != '' }}
-        run: |
-          ${{ inputs.security_scan_after_step_command }}                     
+  #     - name: Comment report
+  #       if: always()
+  #       uses: mshick/add-pr-comment@v2
+  #       with:
+  #         message-id: dependency_scan
+  #         message: "## OSV Dependency Scan Report \n
+  #                   ### The following vulnerabilities has been detected in the code. Please resolve these before merging the pull request. \n
+  #                   \n\n${{ steps.dependency_scan.outputs.report }}\n\n
+  #                   " 
+  #     - name: Security scans after step
+  #       if: ${{ inputs.security_scan_after_step_command != '' }}
+  #       run: |
+  #         ${{ inputs.security_scan_after_step_command }}                     
 
 
   Technology_based_scans:
