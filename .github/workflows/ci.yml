@@ -196,6 +196,9 @@ jobs:
           // Write the CSV data to a Markdown file
           fs.writeFileSync('csvData.md', tableData.join('\n'));
           EOF
+          echo 'report<<EOF' >> $GITHUB_OUTPUT
+          cat csvData.md >> $GITHUB_OUTPUT
+          echo 'EOF' >> $GITHUB_OUTPUT
           exit $SEMGREP_EXIT_CODE
 
       - uses: mshick/add-pr-comment@v2
