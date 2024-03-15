@@ -196,9 +196,7 @@ jobs:
           // Write the CSV data to a Markdown file
           fs.writeFileSync('csvData.md', tableData.join('\n'));
           EOF
-          echo 'report<<EOF' >> $GITHUB_OUTPUT
-          cat csvData.md >> $GITHUB_OUTPUT
-          echo 'EOF' >> $GITHUB_OUTPUT
+          echo "report=$(cat csvData.md)" >> $GITHUB_ENV
           exit $SEMGREP_EXIT_CODE
 
       - uses: mshick/add-pr-comment@v2
@@ -211,7 +209,7 @@ jobs:
 
             Rule Id | Severity | Message | Line Number | File Name 
             --- | --- | --- | --- | --- 
-            ${{ steps.generate_sast_report.outputs.report }}
+            ${{ env.report }}
   #           "
   #     - name: Gitleaks scan
   #       if: ${{ always() && !contains(inputs.excluded_jobs, 'gitleaks')  }} 
