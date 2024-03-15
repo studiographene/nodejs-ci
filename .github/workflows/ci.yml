@@ -145,77 +145,70 @@ jobs:
 
 
 
-  # Security-scans:
-  #   name: Security scans
-  #   runs-on: ubuntu-latest
-  #   permissions: write-all
-  #   # needs: caching
-  #   if: ${{!contains(github.actor, 'github-actions[bot]')  && (github.event_name != 'issue_comment') && (github.actor != 'dependabot[bot]') }}
-  #   container:
-  #     image: public.ecr.aws/studiographene/ci:node-20-alpine
-  #   steps:
-  #     - name: Checkout
-  #       uses: actions/checkout@v3
-  #       with:
-  #         ref: ${{ github.REF }}
+  Security-scans:
+    name: Security scans
+    runs-on: ubuntu-latest
+    permissions: write-all
+    # needs: caching
+    if: ${{!contains(github.actor, 'github-actions[bot]')  && (github.event_name != 'issue_comment') && (github.actor != 'dependabot[bot]') }}
+    container:
+      image: public.ecr.aws/studiographene/ci:node-20-alpine
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.REF }}
 
-  #     - name: Security scans before step
-  #       if: ${{ inputs.security_scan_before_step_command != '' }}
-  #       run: |
-  #         ${{ inputs.security_scan_before_step_command}}
-
-  #     - name: SAST Scan
-  #       if: ${{ always() && !contains(inputs.excluded_jobs, 'sast')  }}
+      - name: Security scans before step
+        if: ${{ inputs.security_scan_before_step_command != '' }}
+        run: |
+          ${{ inputs.security_scan_before_step_command}}
+      - name: SAST Scan
+        if: ${{ always() && !contains(inputs.excluded_jobs, 'sast')  }}
         
-  #       id: generate_report
-  #       run: |
-  #         set +e
-  #         semgrep scan --error --config  "p/default" --config /root/configs/semgrep/rules/eslint.v1.3.32.yml --sarif ${{ inputs.semgrep_options }} > semgrep.sarif 
-  #         SEMGREP_EXIT_CODE=$?
-  #         set -e
-  #         csvData=$(node - << EOF
-  #         const fs = require('fs');
-  #         const sarifFile = fs.readFileSync("semgrep.sarif", 'utf8');
-  #         const sarifData = JSON.parse(sarifFile);
+        id: generate_sast_report
+        run: |
+          set +e
+          semgrep scan --error --config  "p/default" --config /root/configs/semgrep/rules/eslint.v1.3.32.yml --sarif ${{ inputs.semgrep_options }} > semgrep.sarif 
+          SEMGREP_EXIT_CODE=$?
+          set -e
+          node - << EOF
+          const fs = require('fs');
+          const sarifFile = fs.readFileSync("semgrep.sarif", 'utf8');
+          const sarifData = JSON.parse(sarifFile);
 
-  #         const tableData = [];
+          const tableData = [];
 
-  #         for (const run of sarifData.runs) {
-  #           for (const result of run.results) {
-  #             let ruleId = result.ruleId.replaceAll(',',';');
-  #             ruleId = ruleId.replaceAll('\n','');
-  #             let message = result.message.text.replaceAll(',', ';');
-  #             message = message.replaceAll('\n','');
-  #             const severity = result.level;
-  #             const location = result.locations[0].physicalLocation;
-  #             const lineNumber = location.region.startLine;
-  #             const fileName = location.artifactLocation.uri;
-  #             // Add data to the tableData array
-  #             tableData.push(ruleId + "|" + message +"|" + lineNumber + "|" + fileName);
-  #           }
-  #         }                  
-  #         // Log the CSV data as a string
-  #         const csvData = tableData.join('\n');
-  #         console.log(csvData);
-  #         EOF
-  #         )
+          for (const run of sarifData.runs) {
+            for (const result of run.results) {
+              let ruleId = result.ruleId.replaceAll(',',';');
+              ruleId = ruleId.replaceAll('\n','');
+              let message = result.message.text.replaceAll(',', ';');
+              message = message.replaceAll('\n','');
+              const severity = result.level;
+              const location = result.locations[0].physicalLocation;
+              const lineNumber = location.region.startLine;
+              const fileName = location.artifactLocation.uri;
+              // Add data to the tableData array
+              tableData.push(ruleId + "|" + severity + "|" + message +"|" + lineNumber + "|" + fileName);
+            }
+          }                  
+          // Write the CSV data to a Markdown file
+          fs.writeFileSync('csvData.md', tableData.join('\n'));
+          EOF
+          exit $SEMGREP_EXIT_CODE
 
-  #         # Append the CSV data to the output file
-  #         echo 'generating report'
-  #         echo 'report<<EOF' >> $GITHUB_OUTPUT
-  #         echo "$csvData" >> $GITHUB_OUTPUT
-  #         echo 'EOF' >> $GITHUB_OUTPUT
-  #         exit $SEMGREP_EXIT_CODE
+      - uses: mshick/add-pr-comment@v2
+        if: always()
+        with:
+          message-id: sast-scan
+          message: |
+            ### Semgrep Report 
+            Below are the issues found by semgrep: 
 
-  #     - uses: mshick/add-pr-comment@v2
-  #       if: always()
-  #       with:
-  #         message-id: sast-scan
-  #         message: "### Semgrep Report \n
-  #           Below are the issues found by semgrep: \n
-  #           \n\nRule Id | Message | Line Number | File Name \n
-  #           --- | --- | --- | --- \n
-  #             ${{steps.generate_report.outputs.report}}\n\n
+            Rule Id | Severity | Message | Line Number | File Name 
+            --- | --- | --- | --- | --- 
+            ${{ steps.generate_sast_report.outputs.report }}
   #           "
   #     - name: Gitleaks scan
   #       if: ${{ always() && !contains(inputs.excluded_jobs, 'gitleaks')  }} 
@@ -412,3 +405,6 @@ jobs:
   #       if: ${{ inputs.pr_agent_after_step_command != '' }}
   #       run: |
   #         ${{ inputs.pr_agent_after_step_command}}
+
+
+  
