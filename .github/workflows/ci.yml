@@ -195,10 +195,16 @@ jobs:
           // Write the CSV data to a Markdown file
           fs.writeFileSync('semgrep_report.md', tableData.join('\n'));
           EOF
-          echo 'report<<EOF' >> $GITHUB_OUTPUT
-          cat semgrep_report.md >> $GITHUB_OUTPUT
-          echo 'EOF' >> $GITHUB_OUTPUT
+          
+          cat semgrep_report.md >> report.md
+          
           exit $SEMGREP_EXIT_CODE
+      - uses: mshick/add-pr-comment@v2
+        if: always()
+        with:
+          message-id: sast-scan
+          file: report.md
+              
   #           "
   #     - name: Gitleaks scan
   #       if: ${{ always() && !contains(inputs.excluded_jobs, 'gitleaks')  }} 
