@@ -197,14 +197,15 @@ jobs:
           }                  
           EOF
 
-        # if [ $SEMGREP_EXIT_CODE -eq 0 ]; then
-        #   echo 'report=The code has passed all SAST scan rules.' >> $GITHUB_ENV
-        # else
-        #   echo 'report<<EOF' >> $GITHUB_ENV
-        #   cat report.md >> $GITHUB_ENV
-        #   echo 'EOF' >> $GITHUB_ENV
-        # fi
+         
           exit $SEMGREP_EXIT_CODE
+        # if [ $SEMGREP_EXIT_CODE -eq 0 ]; then
+      #   echo 'report=The code has passed all SAST scan rules.' >> $GITHUB_ENV
+      # else
+      #   echo 'report<<EOF' >> $GITHUB_ENV
+      #   cat report.md >> $GITHUB_ENV
+      #   echo 'EOF' >> $GITHUB_ENV
+      # fi
 
       - uses: mshick/add-pr-comment@v2
         if: always()
