@@ -197,20 +197,21 @@ jobs:
           }                  
           EOF
 
-          if [ $SEMGREP_EXIT_CODE -eq 0 ]; then
-            echo 'report=The code has passed all SAST scan rules.' >> $GITHUB_ENV
-          else
-            echo 'report<<EOF' >> $GITHUB_ENV
-            cat report.md >> $GITHUB_ENV
-            echo 'EOF' >> $GITHUB_ENV
-          fi
+        # if [ $SEMGREP_EXIT_CODE -eq 0 ]; then
+        #   echo 'report=The code has passed all SAST scan rules.' >> $GITHUB_ENV
+        # else
+        #   echo 'report<<EOF' >> $GITHUB_ENV
+        #   cat report.md >> $GITHUB_ENV
+        #   echo 'EOF' >> $GITHUB_ENV
+        # fi
           exit $SEMGREP_EXIT_CODE
 
       - uses: mshick/add-pr-comment@v2
         if: always()
         with:
           message-id: sast-scan
-          message: ${{ env.report }}
+          message-path: |
+            report.md
       #     set +e
       #     semgrep scan --error --config  "p/default" --config /root/configs/semgrep/rules/eslint.v1.3.32.yml --sarif ${{ inputs.semgrep_options }} > semgrep.sarif 
       #     SEMGREP_EXIT_CODE=$?
