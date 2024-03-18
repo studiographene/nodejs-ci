@@ -168,42 +168,42 @@ jobs:
         
         id: generate_report
         run: |
-            set +e
-            semgrep scan --error --config  "p/default" --config /root/configs/semgrep/rules/eslint.v1.3.32.yml --json ${{ inputs.semgrep_options }} > semgrep.json
-            SEMGREP_EXIT_CODE=$?
-            set -e
+              set +e
+              semgrep scan --error --config  "p/default" --config /root/configs/semgrep/rules/eslint.v1.3.32.yml --json ${{ inputs.semgrep_options }} > semgrep.json
+              SEMGREP_EXIT_CODE=$?
+              set -e
 
-            if [ $SEMGREP_EXIT_CODE -ne 0 ]; then
-              echo "### Semgrep Report" > report.md
-              echo "Below are the issues found by semgrep:" >> report.md
-              echo "| Rule Id | Severity |  Message | Line Number | File Name |" >> report.md
-              echo "| --- | --- | --- | --- | --- |" >> report.md
-              node - << EOF >> report.md
-              const fs = require('fs');
-              const jsonFile = fs.readFileSync("semgrep.json", 'utf8');
-              const jsonData = JSON.parse(jsonFile);
+              if [ $SEMGREP_EXIT_CODE -ne 0 ]; then
+                echo "### Semgrep Report" > report.md
+                echo "Below are the issues found by semgrep:" >> report.md
+                echo "| Rule Id | Severity |  Message | Line Number | File Name |" >> report.md
+                echo "| --- | --- | --- | --- | --- |" >> report.md
+                node - << EOF >> report.md
+                const fs = require('fs');
+                const jsonFile = fs.readFileSync("semgrep.json", 'utf8');
+                const jsonData = JSON.parse(jsonFile);
 
-              for (const run of jsonData.runs) {
-                for (const result of run.results) {
-                  let ruleId = result.ruleId.replaceAll(',',';');
-                  ruleId = ruleId.replaceAll('\n','');
-                  let message = result.message.text.replaceAll(',', ';');
-                  message = message.replaceAll('\n','');
-                  const severity = result.level;
-                  const location = result.locations[0].physicalLocation;
-                  const lineNumber = location.region.startLine;
-                  const fileName = location.artifactLocation.uri;
-                  // Log the data in Markdown table format
-                  console.log("| " + ruleId + " | "  + severity + "|" + message +" | " + lineNumber + " | " + fileName + " |");
-                }
-              }                  
+                for (const run of jsonData.runs) {
+                  for (const result of run.results) {
+                    let ruleId = result.ruleId.replaceAll(',',';');
+                    ruleId = ruleId.replaceAll('\n','');
+                    let message = result.message.text.replaceAll(',', ';');
+                    message = message.replaceAll('\n','');
+                    const severity = result.level;
+                    const location = result.locations[0].physicalLocation;
+                    const lineNumber = location.region.startLine;
+                    const fileName = location.artifactLocation.uri;
+                    // Log the data in Markdown table format
+                    console.log("| " + ruleId + " | "  + severity + "|" + message +" | " + lineNumber + " | " + fileName + " |");
+                  }
+                }                  
               EOF
-            else
-              echo "## Semgrep Report" > report.md
-              echo "### There are no vulnerabilities in the code" >> report.md
-            fi
+              else
+                echo "## Semgrep Report" > report.md
+                echo "### There are no vulnerabilities in the code" >> report.md
+              fi
 
-            exit $SEMGREP_EXIT_CODE
+              exit $SEMGREP_EXIT_CODE
 
       - uses: mshick/add-pr-comment@v2
         if: always()
