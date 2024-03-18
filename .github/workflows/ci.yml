@@ -182,7 +182,7 @@ jobs:
             const fs = require('fs');
             const sarifFile = fs.readFileSync("semgrep.sarif", 'utf8');
             const sarifData = JSON.parse(sarifFile);
-          
+
             for (const run of sarifData.runs) {
               for (const result of run.results) {
                 let ruleId = result.ruleId.replaceAll(',',';');
