@@ -163,15 +163,21 @@ jobs:
         if: ${{ inputs.security_scan_before_step_command != '' }}
         run: |
           ${{ inputs.security_scan_before_step_command}}
-      - name: SAST Scan using Semgrep
-        id: sast_scan
-        if: ${{ always() && !contains( inputs.excluded_jobs, 'sast_scan' ) }}
+      - name: SAST Scan
+        if: ${{ always() && !contains(inputs.excluded_jobs, 'sast')  }}
+        
+        id: generate_report
         run: |
           set +e
           semgrep scan --error --config  "p/default" --config /root/configs/semgrep/rules/eslint.v1.3.32.yml --sarif ${{ inputs.semgrep_options }} > semgrep.sarif 
           SEMGREP_EXIT_CODE=$?
           set -e
-          node - << EOF
+          const tableData = [];
+          tableData.push(Rule Id | Severity | Message | Line Number | File Name)
+          echo ### Semgrep Report >> csvData.md 
+          echo Below are the issues found by semgrep: >> csvData.md
+          echo --- | --- | --- | --- |---- >> csvData.md
+          csvData=$(node - << EOF
           const fs = require('fs');
           const sarifFile = fs.readFileSync("semgrep.sarif", 'utf8');
           const sarifData = JSON.parse(sarifFile);
@@ -189,29 +195,32 @@ jobs:
               const lineNumber = location.region.startLine;
               const fileName = location.artifactLocation.uri;
               // Add data to the tableData array
-              tableData.push(ruleId + "|" + severity + "|" + message +"|" + lineNumber + "|" + fileName);
+              tableData.push(ruleId + "|" + message +"|" + lineNumber + "|" + fileName);
             }
           }                  
-          // Write the CSV data to a Markdown file
-          fs.writeFileSync('semgrep_report.md', tableData.join('\n'));
+          // Log the CSV data as a string
+          const csvData = tableData.join('\n');
+          console.log(csvData);
           EOF
-          
-          cat semgrep_report.md >> report.md
+          )
+
+          # Append the CSV data to the output file
+          echo 'generating report'
+  
+          cat "$csvData" >> csvData.md
           echo 'report<<EOF' >> $GITHUB_OUTPUT
-          cat report.md >> $GITHUB_OUTPUT
+          cat csvData.md >> $GITHUB_OUTPUT
           echo 'EOF' >> $GITHUB_OUTPUT
-          exit $OSV_EXIT_CODE
-          
-      - name: Comment report
+          exit $SEMGREP_EXIT_CODE
+
+      - uses: mshick/add-pr-comment@v2
         if: always()
-        uses: mshick/add-pr-comment@v2
         with:
-            message-id: sast_scan
-            message: "## OSV Dependency Scan Report \n
-                      ### The following vulnerabilities has been detected in the code. Please resolve these before merging the pull request. \n
-                      \n\n${{ steps.sast_scan.outputs.report }}\n\n
-                      " 
-              
+          message-id: sast-scan
+          message: "### Semgrep Report \n
+            Below are the issues found by semgrep: \n
+            \n\n${{steps.generate_report.outputs.report}}\n\n
+            "
   #           "
   #     - name: Gitleaks scan
   #       if: ${{ always() && !contains(inputs.excluded_jobs, 'gitleaks')  }} 
