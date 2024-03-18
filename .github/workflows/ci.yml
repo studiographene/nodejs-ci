@@ -169,7 +169,7 @@ jobs:
         id: generate_report
         run: |
               set +e
-              semgrep scan --error --config  "p/default" --config /root/configs/semgrep/rules/eslint.v1.3.32.yml --json ${{ inputs.semgrep_options }} > semgrep.json
+              semgrep scan --error --config  "p/default" --config /root/configs/semgrep/rules/eslint.v1.3.32.yml --sarif ${{ inputs.semgrep_options }} > semgrep.sarif
               SEMGREP_EXIT_CODE=$?
               set -e
 
@@ -180,10 +180,10 @@ jobs:
                 echo "| --- | --- | --- | --- | --- |" >> report.md
                 node - << EOF >> report.md
                 const fs = require('fs');
-                const jsonFile = fs.readFileSync("semgrep.json", 'utf8');
-                const jsonData = JSON.parse(jsonFile);
+                const sarifFile = fs.readFileSync("semgrep.sarif", 'utf8');
+                const sarifData = sarif.parse(sarifFile);
 
-                for (const run of jsonData.runs) {
+                for (const run of sarifData.runs) {
                   for (const result of run.results) {
                     let ruleId = result.ruleId.replaceAll(',',';');
                     ruleId = ruleId.replaceAll('\n','');
