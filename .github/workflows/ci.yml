@@ -173,6 +173,7 @@ jobs:
           SEMGREP_EXIT_CODE=$?
           set -e
 
+            ...
           if [ $SEMGREP_EXIT_CODE -ne 0 ]; then
             echo "### Semgrep Report" > report.md
             echo "Below are the issues found by semgrep:" >> report.md
@@ -202,6 +203,8 @@ jobs:
             echo "## Semgrep Report" > report.md
             echo "### There are no vulnerabilities in the code" >> report.md
           fi
+
+
 
           exit $SEMGREP_EXIT_CODE
 
