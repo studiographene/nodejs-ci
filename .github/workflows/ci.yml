@@ -168,51 +168,48 @@ jobs:
         
         id: generate_report
         run: |
-          set +e
-          semgrep scan --error --config  "p/default" --config /root/configs/semgrep/rules/eslint.v1.3.32.yml --sarif ${{ inputs.semgrep_options }} > semgrep.sarif 
-          SEMGREP_EXIT_CODE=$?
-          set -e
-          echo "### Semgrep Report" > report.md
-          echo "Below are the issues found by semgrep:" >> report.md
-          echo "| Rule Id | Severity |  Message | Line Number | File Name |" >> report.md
-          echo "| --- | --- | --- | --- | --- |" >> report.md
-          node - << EOF >> report.md
-          const fs = require('fs');
-          const sarifFile = fs.readFileSync("semgrep.sarif", 'utf8');
-          const sarifData = JSON.parse(sarifFile);
+            set +e
+            semgrep scan --error --config  "p/default" --config /root/configs/semgrep/rules/eslint.v1.3.32.yml --json ${{ inputs.semgrep_options }} > semgrep.json
+            SEMGREP_EXIT_CODE=$?
+            set -e
 
-          for (const run of sarifData.runs) {
-            for (const result of run.results) {
-              let ruleId = result.ruleId.replaceAll(',',';');
-              ruleId = ruleId.replaceAll('\n','');
-              let message = result.message.text.replaceAll(',', ';');
-              message = message.replaceAll('\n','');
-              const severity = result.level;
-              const location = result.locations[0].physicalLocation;
-              const lineNumber = location.region.startLine;
-              const fileName = location.artifactLocation.uri;
-              // Log the data in Markdown table format
-              console.log("| " + ruleId + " | "  + severity + "|" + message +" | " + lineNumber + " | " + fileName + " |");
-            }
-          }                  
-          EOF
+            if [ $SEMGREP_EXIT_CODE -ne 0 ]; then
+              echo "### Semgrep Report" > report.md
+              echo "Below are the issues found by semgrep:" >> report.md
+              echo "| Rule Id | Severity |  Message | Line Number | File Name |" >> report.md
+              echo "| --- | --- | --- | --- | --- |" >> report.md
+              node - << EOF >> report.md
+              const fs = require('fs');
+              const jsonFile = fs.readFileSync("semgrep.json", 'utf8');
+              const jsonData = JSON.parse(jsonFile);
 
-         
-          exit $SEMGREP_EXIT_CODE
-        # if [ $SEMGREP_EXIT_CODE -eq 0 ]; then
-      #   echo 'report=The code has passed all SAST scan rules.' >> $GITHUB_ENV
-      # else
-      #   echo 'report<<EOF' >> $GITHUB_ENV
-      #   cat report.md >> $GITHUB_ENV
-      #   echo 'EOF' >> $GITHUB_ENV
-      # fi
+              for (const run of jsonData.runs) {
+                for (const result of run.results) {
+                  let ruleId = result.ruleId.replaceAll(',',';');
+                  ruleId = ruleId.replaceAll('\n','');
+                  let message = result.message.text.replaceAll(',', ';');
+                  message = message.replaceAll('\n','');
+                  const severity = result.level;
+                  const location = result.locations[0].physicalLocation;
+                  const lineNumber = location.region.startLine;
+                  const fileName = location.artifactLocation.uri;
+                  // Log the data in Markdown table format
+                  console.log("| " + ruleId + " | "  + severity + "|" + message +" | " + lineNumber + " | " + fileName + " |");
+                }
+              }                  
+              EOF
+            else
+              echo "## Semgrep Report" > report.md
+              echo "### There are no vulnerabilities in the code" >> report.md
+            fi
+
+            exit $SEMGREP_EXIT_CODE
 
       - uses: mshick/add-pr-comment@v2
         if: always()
         with:
           message-id: sast-scan
-          message-path: |
-            report.md
+          message-path: report.md
       #     set +e
       #     semgrep scan --error --config  "p/default" --config /root/configs/semgrep/rules/eslint.v1.3.32.yml --sarif ${{ inputs.semgrep_options }} > semgrep.sarif 
       #     SEMGREP_EXIT_CODE=$?
