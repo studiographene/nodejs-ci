@@ -192,7 +192,7 @@ jobs:
               const lineNumber = location.region.startLine;
               const fileName = location.artifactLocation.uri;
               // Log the data in Markdown table format
-              console.log("| " + ruleId + " | " + message +" | " + lineNumber + " | " + fileName + " |");
+              console.log("| " + ruleId + " | "  + severity + "|" + message +" | " + lineNumber + " | " + fileName + " |");
             }
           }                  
           EOF
