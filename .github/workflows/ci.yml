@@ -197,7 +197,7 @@ jobs:
             }' > script.js
             node script.js >> sast_report.md
           else
-            echo "## Semgrep SAST Scan Report" > report.md
+            echo "## Semgrep SAST Scan Report" > sast_report.md
             echo "### There are no vulnerabilities found in the code" >> sast_report.md
           fi
           exit $SEMGREP_EXIT_CODE
@@ -247,7 +247,7 @@ jobs:
           osv-scanner --format markdown --config=/root/configs/osv/config.toml --sbom=bom.xml > osv_report.md        
           OSV_EXIT_CODE=$?
           set -e    
-          if [ $SEMGREP_EXIT_CODE -ne 0 ]; then
+          if [ $OSV_EXIT_CODE -ne 0 ]; then
             echo "## OSV Dependency Scan Report" >> osv_report.md
             echo "### The following vulnerabilities has been detected in the code. Please resolve these before merging the pull request:" >> osv_report.md
             cat osv_report.md
