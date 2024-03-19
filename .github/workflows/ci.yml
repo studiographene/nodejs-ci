@@ -172,40 +172,34 @@ jobs:
           semgrep scan --error --config  "p/default" --config /root/configs/semgrep/rules/eslint.v1.3.32.yml --sarif ${{ inputs.semgrep_options }} > semgrep.sarif 
           SEMGREP_EXIT_CODE=$?
           set -e
-
-           
           if [ $SEMGREP_EXIT_CODE -ne 0 ]; then
             echo "### Semgrep Report" > report.md
             echo "Below are the issues found by semgrep:" >> report.md
             echo "| Rule Id | Severity |  Message | Line Number | File Name |" >> report.md
             echo "| --- | --- | --- | --- | --- |" >> report.md
-            node - << EOF >> report.md
-            const fs = require('fs');
-            const sarifFile = fs.readFileSync("semgrep.sarif", 'utf8');
+            echo '
+            const fs = require("fs");
+            const sarifFile = fs.readFileSync("semgrep.sarif", "utf8");
             const sarifData = JSON.parse(sarifFile);
 
             for (const run of sarifData.runs) {
               for (const result of run.results) {
-                let ruleId = result.ruleId.replaceAll(',',';');
-                ruleId = ruleId.replaceAll('\n','');
-                let message = result.message.text.replaceAll(',', ';');
-                message = message.replaceAll('\n','');
+                let ruleId = result.ruleId.replaceAll(",",";");
+                ruleId = ruleId.replaceAll("\n","");
+                let message = result.message.text.replaceAll(",", ";");
+                message = message.replaceAll("\n","");
                 const severity = result.level;
                 const location = result.locations[0].physicalLocation;
                 const lineNumber = location.region.startLine;
                 const fileName = location.artifactLocation.uri;
-                // Log the data in Markdown table format
                 console.log("| " + ruleId + " | "  + severity + "|" + message +" | " + lineNumber + " | " + fileName + " |");
               }
-            }                  
-            EOF
+            }' > script.js
+            node script.js >> report.md
           else
             echo "## Semgrep Report" > report.md
             echo "### There are no vulnerabilities in the code" >> report.md
-      
-
-
-
+          fi
           exit $SEMGREP_EXIT_CODE
 
       - uses: mshick/add-pr-comment@v2
