@@ -198,7 +198,7 @@ jobs:
             node script.js >> sast_report.md
           else
             echo "## Semgrep SAST Scan Report" > sast_report.md
-            echo "### There are no vulnerabilities found in the code" >> sast_report.md
+            echo "### :tada:! There are no vulnerabilities found in the code" >> sast_report.md
           fi
           exit $SEMGREP_EXIT_CODE
 
@@ -253,7 +253,7 @@ jobs:
             cat report.md >> osv_report.md
           else
             echo "## OSV Dependency Scan Report" >> osv_report.md
-            echo "### There are no vulnerabilities found in the packages." >> osv_report.md
+            echo "### :tada:! There are no vulnerabilities found in the packages." >> osv_report.md
           fi
 
           exit $OSV_EXIT_CODE
