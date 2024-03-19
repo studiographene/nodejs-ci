@@ -195,10 +195,10 @@ jobs:
                 console.log("| " + ruleId + " | "  + severity + "|" + message +" | " + lineNumber + " | " + fileName + " |");
               }
             }' > script.js
-            node script.js >> report.md
+            node script.js >> sast_report.md
           else
-            echo "## Semgrep Report" > report.md
-            echo "### There are no vulnerabilities in the code" >> report.md
+            echo "## Semgrep SAST Scan Report" > report.md
+            echo "### There are no vulnerabilities found in the code" >> sast_report.md
           fi
           exit $SEMGREP_EXIT_CODE
 
@@ -206,118 +206,70 @@ jobs:
         if: always()
         with:
           message-id: sast-scan
-          message-path: report.md
-      #     set +e
-      #     semgrep scan --error --config  "p/default" --config /root/configs/semgrep/rules/eslint.v1.3.32.yml --sarif ${{ inputs.semgrep_options }} > semgrep.sarif 
-      #     SEMGREP_EXIT_CODE=$?
-      #     set -e
-      #     const tableData = [];
-      #     tableData.push(Rule Id | Severity | Message | Line Number | File Name)
-      #     echo ### Semgrep Report >> csvData.md 
-      #     echo Below are the issues found by semgrep: >> csvData.md
-      #     echo --- | --- | --- | --- |---- >> csvData.md
-      #     csvData=$(node - << EOF
-      #     const fs = require('fs');
-      #     const sarifFile = fs.readFileSync("semgrep.sarif", 'utf8');
-      #     const sarifData = JSON.parse(sarifFile);
-
-      #     const tableData = [];
-
-      #     for (const run of sarifData.runs) {
-      #       for (const result of run.results) {
-      #         let ruleId = result.ruleId.replaceAll(',',';');
-      #         ruleId = ruleId.replaceAll('\n','');
-      #         let message = result.message.text.replaceAll(',', ';');
-      #         message = message.replaceAll('\n','');
-      #         const severity = result.level;
-      #         const location = result.locations[0].physicalLocation;
-      #         const lineNumber = location.region.startLine;
-      #         const fileName = location.artifactLocation.uri;
-      #         // Add data to the tableData array
-      #         tableData.push(ruleId + "|" + message +"|" + lineNumber + "|" + fileName);
-      #       }
-      #     }                  
-      #     // Log the CSV data as a string
-      #     const csvData = tableData.join('\n');
-      #     console.log(csvData);
-      #     EOF
-      #     )
-
-      #     # Append the CSV data to the output file
-      #     echo 'generating report'
-  
-      #     cat "$csvData" >> csvData.md
-      #     echo 'report<<EOF' >> $GITHUB_OUTPUT
-      #     cat csvData.md >> $GITHUB_OUTPUT
-      #     echo 'EOF' >> $GITHUB_OUTPUT
-      #     exit $SEMGREP_EXIT_CODE
-
-      # - uses: mshick/add-pr-comment@v2
-      #   if: always()
-      #   with:
-      #     message-id: sast-scan
-      #     message: "### Semgrep Report \n
-      #       Below are the issues found by semgrep: \n
-      #       \n\n${{steps.generate_report.outputs.report}}\n\n
-      #       "
-  #           "
-  #     - name: Gitleaks scan
-  #       if: ${{ always() && !contains(inputs.excluded_jobs, 'gitleaks')  }} 
-  #       uses: gitleaks/gitleaks-action@v1.6.0
-  #       env:
-  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          message-path: sast_report.md
+      
+      - name: Gitleaks scan
+        if: ${{ always() && !contains(inputs.excluded_jobs, 'gitleaks')  }} 
+        uses: gitleaks/gitleaks-action@v1.6.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           
-  #     - name: Download LockFile Artifact
-  #       if:  always()
-  #       uses: actions/download-artifact@v2
-  #       with:
-  #         name: lockFile
-  #         path: .
-  #     - name:  Generate SBOM using CycloneDX
-  #       if: always ()
-  #       run: |
-  #         cdxgen --no-recurse -o bom.xml -p
-  #       env:
-  #         FETCH_LICENSE: true
-  #         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #         CDXGEN_DEBUG_MODE: debug
+      - name: Download LockFile Artifact
+        if:  always()
+        uses: actions/download-artifact@v2
+        with:
+          name: lockFile
+          path: .
+      - name:  Generate SBOM using CycloneDX
+        if: always ()
+        run: |
+          cdxgen --no-recurse -o bom.xml -p
+        env:
+          FETCH_LICENSE: true
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CDXGEN_DEBUG_MODE: debug
 
-  #     - name: License Scan
-  #       env:
-  #         ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-  #         PR_NUMBER: ${{ github.event.number }}
-  #         PROJECT_NAME: ${{ github.event.repository.name }}
-  #         PROJECT_OWNER: ${{ github.repository_owner }}
-  #       if: ${{ always() && !contains( inputs.excluded_jobs, 'licenseScan' ) }}
-  #       run: |
-  #         /root/executables/ci-utility check --sbom bom.xml --allowedLicences ${{ inputs.allowedLicenses }}          
+      - name: License Scan
+        env:
+          ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.number }}
+          PROJECT_NAME: ${{ github.event.repository.name }}
+          PROJECT_OWNER: ${{ github.repository_owner }}
+        if: ${{ always() && !contains( inputs.excluded_jobs, 'licenseScan' ) }}
+        run: |
+          /root/executables/ci-utility check --sbom bom.xml --allowedLicences ${{ inputs.allowedLicenses }}          
 
-  #     - name: Dependency Scan using Google OSV
-  #       id: dependency_scan
-  #       if: ${{ always() && !contains( inputs.excluded_jobs, 'dependency_scan' ) }}
-  #       run: |
-  #         set +e
-  #         osv-scanner --format markdown --config=/root/configs/osv/config.toml --sbom=bom.xml > osv_report.md        
-  #         OSV_EXIT_CODE=$?
-  #         set -e          
-  #         echo 'report<<EOF' >> $GITHUB_OUTPUT
-  #         cat osv_report.md >> $GITHUB_OUTPUT
-  #         echo 'EOF' >> $GITHUB_OUTPUT
-  #         exit $OSV_EXIT_CODE
+      - name: Dependency Scan using Google OSV
+        id: dependency_scan
+        if: ${{ always() && !contains( inputs.excluded_jobs, 'dependency_scan' ) }}
+        run: |
+          set +e
+          osv-scanner --format markdown --config=/root/configs/osv/config.toml --sbom=bom.xml > osv_report.md        
+          OSV_EXIT_CODE=$?
+          set -e    
+          if [ $SEMGREP_EXIT_CODE -ne 0 ]; then
+            echo "## OSV Dependency Scan Report" >> osv_report.md
+            echo "### The following vulnerabilities has been detected in the code. Please resolve these before merging the pull request:" >> osv_report.md
+            cat osv_report.md
+          else
+            echo "## OSV Dependency Scan Report" >> osv_report.md
+            echo "### There are no vulnerabilities found in the packages." >> osv_report.md
+          fi
+          echo 'report<<EOF' >> $GITHUB_OUTPUT
+          cat osv_report.md >> $GITHUB_OUTPUT
+          echo 'EOF' >> $GITHUB_OUTPUT
+          exit $OSV_EXIT_CODE
 
-  #     - name: Comment report
-  #       if: always()
-  #       uses: mshick/add-pr-comment@v2
-  #       with:
-  #         message-id: dependency_scan
-  #         message: "## OSV Dependency Scan Report \n
-  #                   ### The following vulnerabilities has been detected in the code. Please resolve these before merging the pull request. \n
-  #                   \n\n${{ steps.dependency_scan.outputs.report }}\n\n
-  #                   " 
-  #     - name: Security scans after step
-  #       if: ${{ inputs.security_scan_after_step_command != '' }}
-  #       run: |
-  #         ${{ inputs.security_scan_after_step_command }}                     
+      - name: Comment report
+        if: always()
+        uses: mshick/add-pr-comment@v2
+        with:
+          message-id: dependency_scan
+          message-path: osv_report.md
+      - name: Security scans after step
+        if: ${{ inputs.security_scan_after_step_command != '' }}
+        run: |
+          ${{ inputs.security_scan_after_step_command }}                     
 
 
   # Technology_based_scans:
