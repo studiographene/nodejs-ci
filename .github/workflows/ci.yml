@@ -215,7 +215,7 @@ jobs:
             Below are the issues found by semgrep: \n
             \n\nRule Id | Message | Line Number | File Name \n
             --- | --- | --- | --- \n
-              ${{steps.generate_report.outputs.report}}\n\n
+              ${{steps.generate_sast_report.outputs.report}}\n\n
             "
       - name: Gitleaks scan
         if: ${{ always() && !contains(inputs.excluded_jobs, 'gitleaks')  }} 
