@@ -255,9 +255,7 @@ jobs:
             echo "## OSV Dependency Scan Report" >> osv_report.md
             echo "### There are no vulnerabilities found in the packages." >> osv_report.md
           fi
-          echo 'report<<EOF' >> $GITHUB_OUTPUT
-          cat osv_report.md >> $GITHUB_OUTPUT
-          echo 'EOF' >> $GITHUB_OUTPUT
+
           exit $OSV_EXIT_CODE
 
       - name: Comment report
