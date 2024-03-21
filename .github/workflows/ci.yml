@@ -173,8 +173,8 @@ jobs:
           SEMGREP_EXIT_CODE=$?
           set -e
           if [ $SEMGREP_EXIT_CODE -ne 0 ]; then
-            echo "### Semgrep Report" > sast_report.md
-            echo "## Below are the issues found by semgrep:" >> sast_report.md
+            echo "## Semgrep SAST Scan Report" > sast_report.md
+            echo "### Below are the vulnerabilities found in the code :" >> sast_report.md
             echo "| Rule Id | Severity |  Message | Line Number | File Name |" >> sast_report.md
             echo "| --- | --- | --- | --- | --- |" >> sast_report.md
             echo 'const fs = require("fs");
@@ -248,7 +248,7 @@ jobs:
           set -e    
           if [ $OSV_EXIT_CODE -ne 0 ]; then
             echo "## OSV Dependency Scan Report" >> osv_report.md
-            echo "### The following vulnerabilities has been detected in the packages. Please resolve these before merging the pull request:" >> osv_report.md
+            echo "### The following vulnerabilities have been detected in the packages. Please resolve these before merging the pull request:" >> osv_report.md
             cat report.md >> osv_report.md
           else
             echo "## OSV Dependency Scan Report" >> osv_report.md
