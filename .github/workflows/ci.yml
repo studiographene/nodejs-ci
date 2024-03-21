@@ -174,7 +174,7 @@ jobs:
           set -e
           if [ $SEMGREP_EXIT_CODE -ne 0 ]; then
             echo "### Semgrep Report" > sast_report.md
-            echo "Below are the issues found by semgrep:" >> sast_report.md
+            echo "## Below are the issues found by semgrep:" >> sast_report.md
             echo "| Rule Id | Severity |  Message | Line Number | File Name |" >> sast_report.md
             echo "| --- | --- | --- | --- | --- |" >> sast_report.md
             echo 'const fs = require("fs");
