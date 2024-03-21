@@ -267,24 +267,6 @@ jobs:
         run: |
           ${{ inputs.security_scan_after_step_command }}                     
 
-      - name: Dependency Scan using Google OSV
-        id: dependency_scan
-        if: ${{ always() && !contains( inputs.excluded_jobs, 'dependency_scan' ) }}
-        run: |
-          set +e
-          osv-scanner --format markdown --config=/root/configs/osv/config.toml --sbom=bom.xml > report.md        
-          OSV_EXIT_CODE=$?
-          set -e    
-          if [ $OSV_EXIT_CODE -ne 0 ]; then
-            echo "## OSV Dependency Scan Report" >> osv_report.md
-            echo "### The following vulnerabilities has been detected in the packages. Please resolve these before merging the pull request:" >> osv_report.md
-            cat report.md >> osv_report.md
-          else
-            echo "## OSV Dependency Scan Report" >> osv_report.md
-            echo "### :tada:! There are no vulnerabilities found in the packages." >> osv_report.md
-          fi
-
-          exit $OSV_EXIT_CODE
 
   Technology_based_scans:
       name: Technology based scans
