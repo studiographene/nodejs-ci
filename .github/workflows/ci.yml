@@ -177,10 +177,9 @@ jobs:
             echo "Below are the issues found by semgrep:" >> sast_report.md
             echo "| Rule Id | Severity |  Message | Line Number | File Name |" >> sast_report.md
             echo "| --- | --- | --- | --- | --- |" >> sast_report.md
-            const fs = require("fs");
+            echo 'const fs = require("fs");
             const sarifFile = fs.readFileSync("semgrep.sarif", "utf8");
             const sarifData = JSON.parse(sarifFile);
-
             for (const run of sarifData.runs) {
               for (const result of run.results) {
                 let ruleId = result.ruleId.replaceAll(",",";");
@@ -195,12 +194,12 @@ jobs:
               }
             }' > script.js
             node script.js >> report.md
-            cat report.md >> sast_report.mdS
-          else
-            echo "## Semgrep SAST Scan Report" > report.md
-            echo "### :tada:! There are no vulnerabilities found in the code." >> report.md
-          fi
-          exit $SEMGREP_EXIT_CODE
+            cat report.md >> sast_report.md
+            else
+              echo "## Semgrep SAST Scan Report" > sast_report.md
+              echo "### :tada:! There are no vulnerabilities found in the code." >> sast_report.md
+            fi
+            exit $SEMGREP_EXIT_CODE
 
       - uses: mshick/add-pr-comment@v2
         if: always()
