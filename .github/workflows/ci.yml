@@ -174,15 +174,13 @@ jobs:
           SEMGREP_EXIT_CODE=$?
           set -e
           if [ $SEMGREP_EXIT_CODE -ne 0 ]; then
-            echo "### Semgrep Report" > report.md
-            echo "Below are the issues found by semgrep:" >> report.md
-            echo "| Rule Id | Severity |  Message | Line Number | File Name |" >> report.md
-            echo "| --- | --- | --- | --- | --- |" >> report.md
-            echo '
+            echo "### Semgrep Report" > sast_report.md
+            echo "Below are the issues found by semgrep:" >> sast_report.md
+            echo "| Rule Id | Severity |  Message | Line Number | File Name |" >> sast_report.md
+            echo "| --- | --- | --- | --- | --- |" >> sast_report.md
             const fs = require("fs");
             const sarifFile = fs.readFileSync("semgrep.sarif", "utf8");
             const sarifData = JSON.parse(sarifFile);
-
             for (const run of sarifData.runs) {
               for (const result of run.results) {
                 let ruleId = result.ruleId.replaceAll(",",";");
@@ -257,9 +255,7 @@ jobs:
             echo "## OSV Dependency Scan Report" >> osv_report.md
             echo "### :tada:! There are no vulnerabilities found in the packages." >> osv_report.md
           fi
-
           exit $OSV_EXIT_CODE
-
       - name: OSV Dependency Scan report in PR comment 
         if: ${{ always() && !contains( inputs.excluded_jobs, 'dependency_scan' ) }}
         uses: mshick/add-pr-comment@v2
@@ -271,6 +267,24 @@ jobs:
         run: |
           ${{ inputs.security_scan_after_step_command }}                     
 
+      - name: Dependency Scan using Google OSV
+        id: dependency_scan
+        if: ${{ always() && !contains( inputs.excluded_jobs, 'dependency_scan' ) }}
+        run: |
+          set +e
+          osv-scanner --format markdown --config=/root/configs/osv/config.toml --sbom=bom.xml > report.md        
+          OSV_EXIT_CODE=$?
+          set -e    
+          if [ $OSV_EXIT_CODE -ne 0 ]; then
+            echo "## OSV Dependency Scan Report" >> osv_report.md
+            echo "### The following vulnerabilities has been detected in the packages. Please resolve these before merging the pull request:" >> osv_report.md
+            cat report.md >> osv_report.md
+          else
+            echo "## OSV Dependency Scan Report" >> osv_report.md
+            echo "### :tada:! There are no vulnerabilities found in the packages." >> osv_report.md
+          fi
+
+          exit $OSV_EXIT_CODE
 
   Technology_based_scans:
       name: Technology based scans
