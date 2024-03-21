@@ -177,7 +177,6 @@ jobs:
             echo "Below are the issues found by semgrep:" >> report.md
             echo "| Rule Id | Severity |  Message | Line Number | File Name |" >> report.md
             echo "| --- | --- | --- | --- | --- |" >> report.md
-            echo '
             const fs = require("fs");
             const sarifFile = fs.readFileSync("semgrep.sarif", "utf8");
             const sarifData = JSON.parse(sarifFile);
@@ -195,10 +194,10 @@ jobs:
                 console.log("| " + ruleId + " | "  + severity + "|" + message +" | " + lineNumber + " | " + fileName + " |");
               }
             }' > script.js
-            node script.js >> sast_report.md
+            node script.js >> report.md
           else
-            echo "## Semgrep SAST Scan Report" > sast_report.md
-            echo "### :tada:! There are no vulnerabilities found in the code." >> sast_report.md
+            echo "## Semgrep SAST Scan Report" > report.md
+            echo "### :tada:! There are no vulnerabilities found in the code." >> report.md
           fi
           exit $SEMGREP_EXIT_CODE
 
