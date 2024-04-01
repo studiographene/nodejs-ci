@@ -163,22 +163,21 @@ jobs:
         if: ${{ inputs.security_scan_before_step_command != '' }}
         run: |
           ${{ inputs.security_scan_before_step_command}}
-
       - name: SAST Scan
         if: ${{ always() && !contains(inputs.excluded_jobs, 'sast')  }}
         
-        id: generate_sast_report
+        id: generate_report
         run: |
           set +e
           semgrep scan --error --config  "p/default" --config /root/configs/semgrep/rules/eslint.v1.3.32.yml --sarif ${{ inputs.semgrep_options }} > semgrep.sarif 
           SEMGREP_EXIT_CODE=$?
           set -e
           if [ $SEMGREP_EXIT_CODE -ne 0 ]; then
-            echo "### Semgrep Report" > sast_report.md
-            echo "Below are the issues found by semgrep:" >> sast_report.md
+            echo "## Semgrep SAST Scan Report" > sast_report.md
+            echo "### Below are the vulnerabilities found in the code. Please resolve these before merging the pull request: " >> sast_report.md
             echo "| Rule Id | Severity |  Message | Line Number | File Name |" >> sast_report.md
             echo "| --- | --- | --- | --- | --- |" >> sast_report.md
-            const fs = require("fs");
+            echo 'const fs = require("fs");
             const sarifFile = fs.readFileSync("semgrep.sarif", "utf8");
             const sarifData = JSON.parse(sarifFile);
             for (const run of sarifData.runs) {
@@ -194,18 +193,20 @@ jobs:
                 console.log("| " + ruleId + " | "  + severity + "|" + message +" | " + lineNumber + " | " + fileName + " |");
               }
             }' > script.js
-            node script.js >> sast_report.md
-          else
-            echo "## Semgrep SAST Scan Report" > sast_report.md
-            echo "### :tada: ! There are no vulnerabilities found in the code." >> sast_report.md
-          fi
-          exit $SEMGREP_EXIT_CODE
+            node script.js >> report.md
+            cat report.md >> sast_report.md
+            else
+              echo "## Semgrep SAST Scan Report" > sast_report.md
+              echo "### :tada:! There are no vulnerabilities found in the code." >> sast_report.md
+            fi
+            exit $SEMGREP_EXIT_CODE
 
       - uses: mshick/add-pr-comment@v2
-        if: ${{ always() && !contains(inputs.excluded_jobs, 'sast')  }}
+        if: always()
         with:
           message-id: sast-scan
           message-path: sast_report.md
+      
       - name: Gitleaks scan
         if: ${{ always() && !contains(inputs.excluded_jobs, 'gitleaks')  }} 
         uses: gitleaks/gitleaks-action@v1.6.0
@@ -235,10 +236,8 @@ jobs:
           PROJECT_OWNER: ${{ github.repository_owner }}
         if: ${{ always() && !contains( inputs.excluded_jobs, 'licenseScan' ) }}
         run: |
-           if [ ! -f $(pwd)/allowed_licenses.txt ]; then
-             touch $(pwd)/allowed_licenses.txt
-           fi
-           /root/executables/ci-utility check --sbom bom.xml --allowedLicences ${{ inputs.allowedLicenses }}          
+          /root/executables/ci-utility check --sbom bom.xml --allowedLicences ${{ inputs.allowedLicenses }}          
+
       - name: Dependency Scan using Google OSV
         id: dependency_scan
         if: ${{ always() && !contains( inputs.excluded_jobs, 'dependency_scan' ) }}
@@ -249,15 +248,17 @@ jobs:
           set -e    
           if [ $OSV_EXIT_CODE -ne 0 ]; then
             echo "## OSV Dependency Scan Report" >> osv_report.md
-            echo "### The following vulnerabilities has been detected in the packages. Please resolve these before merging the pull request:" >> osv_report.md
+            echo "### The following vulnerabilities have been detected in the packages. Please resolve these before merging the pull request:" >> osv_report.md
             cat report.md >> osv_report.md
           else
             echo "## OSV Dependency Scan Report" >> osv_report.md
             echo "### :tada:! There are no vulnerabilities found in the packages." >> osv_report.md
           fi
+
           exit $OSV_EXIT_CODE
-      - name: OSV Dependency Scan report in PR comment 
-        if: ${{ always() && !contains( inputs.excluded_jobs, 'dependency_scan' ) }}
+
+      - name: Comment report
+        if: always()
         uses: mshick/add-pr-comment@v2
         with:
           message-id: dependency_scan
@@ -265,7 +266,7 @@ jobs:
       - name: Security scans after step
         if: ${{ inputs.security_scan_after_step_command != '' }}
         run: |
-          ${{ inputs.security_scan_after_step_command }}                     
+          ${{ inputs.security_scan_after_step_command }}                
 
 
   Technology_based_scans:
