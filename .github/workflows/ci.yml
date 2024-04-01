@@ -192,9 +192,9 @@ jobs:
                 const fileName = location.artifactLocation.uri;
                 console.log("| " + ruleId + " | "  + severity + "|" + message +" | " + lineNumber + " | " + fileName + " |");
               }
-            }' > script.js
-            node script.js >> report.md
-            cat report.md >> sast_report.md
+            }' > format_script.js
+            node format_script.js >> sast_report.md
+
             else
               echo "## Semgrep SAST Scan Report" > sast_report.md
               echo "### :tada:! There are no vulnerabilities found in the code." >> sast_report.md
@@ -246,13 +246,13 @@ jobs:
         if: ${{ always() && !contains( inputs.excluded_jobs, 'dependency_scan' ) }}
         run: |
           set +e
-          osv-scanner --format markdown --config=/root/configs/osv/config.toml --sbom=bom.xml > report.md        
+          osv-scanner --format markdown --config=/root/configs/osv/config.toml --sbom=bom.xml > osv_raw_report.md 
           OSV_EXIT_CODE=$?
           set -e    
           if [ $OSV_EXIT_CODE -ne 0 ]; then
             echo "## OSV Dependency Scan Report" >> osv_report.md
             echo "### The following vulnerabilities have been detected in the packages. Please resolve these before merging the pull request:" >> osv_report.md
-            cat report.md >> osv_report.md
+            cat osv_raw_report.md >> osv_report.md
           else
             echo "## OSV Dependency Scan Report" >> osv_report.md
             echo "### :tada:! There are no vulnerabilities found in the packages." >> osv_report.md
