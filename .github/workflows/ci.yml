@@ -192,8 +192,8 @@ jobs:
                 const fileName = location.artifactLocation.uri;
                 console.log("| " + ruleId + " | "  + severity + "|" + message +" | " + lineNumber + " | " + fileName + " |");
               }
-            }' > format_script.js
-            node format_script.js >> sast_report.md
+            }' > sast_report_format.js
+            node sast_report_format.js >> sast_report.md
 
             else
               echo "## Semgrep SAST Scan Report" > sast_report.md
