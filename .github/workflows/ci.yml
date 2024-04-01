@@ -206,7 +206,7 @@ jobs:
         with:
           message-id: sast-scan
           message-path: sast_report.md
-      
+     
       - name: Gitleaks scan
         if: ${{ always() && !contains(inputs.excluded_jobs, 'gitleaks')  }} 
         uses: gitleaks/gitleaks-action@v1.6.0
