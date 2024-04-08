@@ -163,7 +163,6 @@ jobs:
         if: ${{ inputs.security_scan_before_step_command != '' }}
         run: |
           ${{ inputs.security_scan_before_step_command}}
-
       - name: SAST Scan
         if: ${{ always() && !contains(inputs.excluded_jobs, 'sast')  }}
         
@@ -173,50 +172,41 @@ jobs:
           semgrep scan --error --config  "p/default" --config /root/configs/semgrep/rules/eslint.v1.3.32.yml --sarif ${{ inputs.semgrep_options }} > semgrep.sarif 
           SEMGREP_EXIT_CODE=$?
           set -e
-          csvData=$(node - << EOF
-          const fs = require('fs');
-          const sarifFile = fs.readFileSync("semgrep.sarif", 'utf8');
-          const sarifData = JSON.parse(sarifFile);
+          if [ $SEMGREP_EXIT_CODE -ne 0 ]; then
+            echo "## Semgrep SAST Scan Report" > sast_report.md
+            echo "### Below are the vulnerabilities found in the code. Please resolve these before merging the pull request: " >> sast_report.md
+            echo "| Rule Id | Severity |  Message | Line Number | File Name |" >> sast_report.md
+            echo "| --- | --- | --- | --- | --- |" >> sast_report.md
+            echo 'const fs = require("fs");
+            const sarifFile = fs.readFileSync("semgrep.sarif", "utf8");
+            const sarifData = JSON.parse(sarifFile);
+            for (const run of sarifData.runs) {
+              for (const result of run.results) {
+                let ruleId = result.ruleId.replaceAll(",",";");
+                ruleId = ruleId.replaceAll("\n","");
+                let message = result.message.text.replaceAll(",", ";");
+                message = message.replaceAll("\n","");
+                const severity = result.level;
+                const location = result.locations[0].physicalLocation;
+                const lineNumber = location.region.startLine;
+                const fileName = location.artifactLocation.uri;
+                console.log("| " + ruleId + " | "  + severity + "|" + message +" | " + lineNumber + " | " + fileName + " |");
+              }
+            }' > sast_report_format.js
+            node sast_report_format.js >> sast_report.md
 
-          const tableData = [];
-
-          for (const run of sarifData.runs) {
-            for (const result of run.results) {
-              let ruleId = result.ruleId.replaceAll(',',';');
-              ruleId = ruleId.replaceAll('\n','');
-              let message = result.message.text.replaceAll(',', ';');
-              message = message.replaceAll('\n','');
-              const severity = result.level;
-              const location = result.locations[0].physicalLocation;
-              const lineNumber = location.region.startLine;
-              const fileName = location.artifactLocation.uri;
-              // Add data to the tableData array
-              tableData.push(ruleId + "|" + message +"|" + lineNumber + "|" + fileName);
-            }
-          }                  
-          // Log the CSV data as a string
-          const csvData = tableData.join('\n');
-          console.log(csvData);
-          EOF
-          )
-
-          # Append the CSV data to the output file
-          echo 'generating report'
-          echo 'report<<EOF' >> $GITHUB_OUTPUT
-          echo "$csvData" >> $GITHUB_OUTPUT
-          echo 'EOF' >> $GITHUB_OUTPUT
-          exit $SEMGREP_EXIT_CODE
+            else
+              echo "## Semgrep SAST Scan Report" > sast_report.md
+              echo "### :tada:! There are no vulnerabilities found in the code." >> sast_report.md
+            fi
+            exit $SEMGREP_EXIT_CODE
 
       - uses: mshick/add-pr-comment@v2
         if: always()
         with:
           message-id: sast-scan
-          message: "### Semgrep Report \n
-            Below are the issues found by semgrep: \n
-            \n\nRule Id | Message | Line Number | File Name \n
-            --- | --- | --- | --- \n
-              ${{steps.generate_sast_report.outputs.report}}\n\n
-            "
+          message-path: sast_report.md
+     
       - name: Gitleaks scan
         if: ${{ always() && !contains(inputs.excluded_jobs, 'gitleaks')  }} 
         uses: gitleaks/gitleaks-action@v1.6.0
@@ -249,19 +239,25 @@ jobs:
            if [ ! -f $(pwd)/allowed_licenses.txt ]; then
              touch $(pwd)/allowed_licenses.txt
            fi
-           /root/executables/ci-utility check --sbom bom.xml --allowedLicences ${{ inputs.allowedLicenses }}          
+           /root/executables/ci-utility check --sbom bom.xml --allowedLicences ${{ inputs.allowedLicenses }}       
 
       - name: Dependency Scan using Google OSV
         id: dependency_scan
         if: ${{ always() && !contains( inputs.excluded_jobs, 'dependency_scan' ) }}
         run: |
           set +e
-          osv-scanner --format markdown --config=/root/configs/osv/config.toml --sbom=bom.xml > osv_report.md        
+          osv-scanner --format markdown --config=/root/configs/osv/config.toml --sbom=bom.xml > osv_raw_report.md 
           OSV_EXIT_CODE=$?
-          set -e          
-          echo 'report<<EOF' >> $GITHUB_OUTPUT
-          cat osv_report.md >> $GITHUB_OUTPUT
-          echo 'EOF' >> $GITHUB_OUTPUT
+          set -e    
+          if [ $OSV_EXIT_CODE -ne 0 ]; then
+            echo "## OSV Dependency Scan Report" >> osv_report.md
+            echo "### The following vulnerabilities have been detected in the packages. Please resolve these before merging the pull request:" >> osv_report.md
+            cat osv_raw_report.md >> osv_report.md
+          else
+            echo "## OSV Dependency Scan Report" >> osv_report.md
+            echo "### :tada:! There are no vulnerabilities found in the packages." >> osv_report.md
+          fi
+
           exit $OSV_EXIT_CODE
 
       - name: generate_osv_report
@@ -269,14 +265,11 @@ jobs:
         uses: mshick/add-pr-comment@v2
         with:
           message-id: dependency_scan
-          message: "## OSV Dependency Scan Report \n
-                    ### The following vulnerabilities has been detected in the code. Please resolve these before merging the pull request. \n
-                    \n\n${{ steps.dependency_scan.outputs.report }}\n\n
-                    " 
+          message-path: osv_report.md
       - name: Security scans after step
         if: ${{ inputs.security_scan_after_step_command != '' }}
         run: |
-          ${{ inputs.security_scan_after_step_command }}                     
+          ${{ inputs.security_scan_after_step_command }}                
 
 
   Technology_based_scans:
