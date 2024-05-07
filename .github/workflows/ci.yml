@@ -388,25 +388,15 @@ jobs:
         - name: Technology based scans after step
           if: ${{ inputs.technology_based_scans_after_step_command != '' }}
           run: |
-            ${{ inputs.technology_based_scans_after_step_command}}
-          
+            ${{ inputs.technology_based_scans_after_step_command}}    
 
   pr_agent:
     name: Codium PR Agent Scan
     if: ${{ !contains( inputs.excluded_jobs, 'pr_agent' ) && !(contains(fromJSON('["dependabot[bot]", "github-actions[bot]"]'), github.actor)) }}
     runs-on: ubuntu-latest
-    steps:
-      - name: before step
-        if: ${{ inputs.pr_agent_before_step_command != '' }}
-        run: |
-          ${{ inputs.pr_agent_before_step_command}}
-      - name: PR Agent action step
-        id: pragent
-        uses: Codium-ai/pr-agent@main
-        env:
-          OPENAI_KEY: ${{ secrets.OPENAI_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      - name: after step
-        if: ${{ inputs.pr_agent_after_step_command != '' }}
-        run: |
-          ${{ inputs.pr_agent_after_step_command}}
+    uses: studiographene/github-action-workflows/.github/workflows/codium-pr-agent.yml@v1
+      secrets: inherit
+      with:
+        pr_agent_before_step_command: ${{ inputs.pr_agent_before_step_command }}
+        pr_agent_after_step_command: ${{ inputs.pr_agent_after_step_command}}
+      
