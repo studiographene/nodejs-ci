@@ -78,7 +78,7 @@ jobs:
       image: public.ecr.aws/studiographene/ci:node-20-alpine
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.REF }}
       - name: before step
@@ -155,7 +155,7 @@ jobs:
       image: public.ecr.aws/studiographene/ci:node-20-alpine
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.REF }}
 
@@ -282,7 +282,7 @@ jobs:
         image: public.ecr.aws/studiographene/ci:node-20-alpine-v1.0.4
       steps:
         - name: Checkout
-          uses: actions/checkout@v3
+          uses: actions/checkout@v4
           with:
             ref: ${{ github.REF }}
         - name: Technology based scans before step
