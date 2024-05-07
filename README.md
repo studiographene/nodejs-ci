@@ -47,7 +47,6 @@ jobs:
   analytics:
     uses: studiographene/nodejs-ci/.github/workflows/dependencies-analytics.yml@master
     secrets: inherit
-    permissions: write-all
 ```
 
 ### Pulse SAST Analytics workflow
@@ -66,7 +65,6 @@ jobs:
   analytics:
     uses: studiographene/nodejs-ci/.github/workflows/sast-analytics.yml@master
     secrets: inherit
-    permissions: write-all
 ```
 
 ---
