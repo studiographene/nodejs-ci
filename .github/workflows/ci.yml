@@ -353,7 +353,7 @@ jobs:
       after_step_command: ${{ inputs.container_scan_after_step_command}}
         
   pr_agent:
-    name: Codium PR Agent Scan
+    name: Codium PR Agent
     if: ${{ !contains( inputs.excluded_jobs, 'pr_agent' ) && !(contains(fromJSON('["dependabot[bot]", "github-actions[bot]"]'), github.actor)) }}
     uses: studiographene/github-action-workflows/.github/workflows/codium-pr-agent.yml@master
     secrets: inherit
