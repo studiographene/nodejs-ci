@@ -78,7 +78,7 @@ on:
 
 jobs:
   call_workflow:
-    uses: studiographene/github-action-workflows/.github/workflows/nodejs-ci.yml@master # if you want alternatively pin to tag version version
+    uses: studiographene/github-action-workflows/.github/workflows/nodejs-ci.yml@feature/nodejs-ci # if you want alternatively pin to tag version version
     with:
       excluded_jobs: ${{ inputs.excluded_jobs }}
       package_manager: ${{ inputs.package_manager }}
