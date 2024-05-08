@@ -4,4 +4,4 @@
 - [Pulse Dependency Analytics](https://github.com/studiographene/github-action-workflows/blob/master/README-pulse-dependencies-analytics.md)
 - [Pulse SAST Analytics](https://github.com/studiographene/github-action-workflows/blob/master/README-pulse-sast-analytics.md)
 
-> As an extended support this workflow is made to continue to work, but again this workflow call the new above reusable workflows
+> As an extended support this workflow is made to continue to work, but again this workflow calls the new above reusable workflows
