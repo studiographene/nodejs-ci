@@ -20,20 +20,11 @@ on:
         default: "npm run build"
       docker_build_command:
         type: string
-        default: "docker build -t local:latest ."
+        default: ""
       docker_build_image_id:
         description: "Docker image ID as mentioned in docker_build_command"
         type: string
         default: "local:latest"
-      CONTAINER_SCANNERS:
-        description: "comma-separated list of what security issues to detect (vuln,secret,config). Default = vuln"
-        type: string
-        required: false
-        default: vuln
-      CONTAINER_SCAN_SKIP_DIRS:
-        description: "Comma separated list of directories to skip scanning"
-        type: string
-        required: false
       lint_command:
         type: string
         default: "npm run lint"
@@ -86,8 +77,6 @@ jobs:
       build_command: ${{ inputs.build_command }}
       docker_build_command: ${{ inputs.docker_build_command }}
       docker_build_image_id: ${{ inputs.docker_build_image_id }}
-      CONTAINER_SCANNERS: ${{ inputs.CONTAINER_SCANNERS }}
-      CONTAINER_SCAN_SKIP_DIRS: ${{ inputs.CONTAINER_SCAN_SKIP_DIRS }}
       lint_command: ${{ inputs.lint_command }}
       allowedLicenses: ${{ inputs.allowedLicenses }}
       semgrep_options: ${{ inputs.semgrep_options }}
