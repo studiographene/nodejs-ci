@@ -74,4 +74,4 @@ jobs:
       - name: EndOfSupport upgrade to the new workflow
         run: |
           echo "::error::This workflow is deprecated and disabled. Upgrade to new workflow, refer to, https://studiographene.atlassian.net/wiki/spaces/SGKB/pages/2166816769/GitHub+Change+Announcements+Deprecating+CI+Workflows+In+Favour+Of+New+Central+Workflow+15+May+24"
-      
+          exit 1
