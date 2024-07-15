@@ -1,4 +1,4 @@
-name: NodeJS CI
+name: EndOfSupport upgrade the workflow
 on:
   workflow_call:
     inputs:
@@ -68,28 +68,10 @@ on:
         default: ""  
 
 jobs:
-  call_workflow:
-    uses: studiographene/github-action-workflows/.github/workflows/nodejs-ci.yml@master # if you want alternatively pin to tag version version
-    with:
-      excluded_jobs: ${{ inputs.excluded_jobs }}
-      package_manager: ${{ inputs.package_manager }}
-      npm_token: ${{ inputs.npm_token }}
-      build_command: ${{ inputs.build_command }}
-      docker_build_command: ${{ inputs.docker_build_command }}
-      docker_build_image_id: ${{ inputs.docker_build_image_id }}
-      lint_command: ${{ inputs.lint_command }}
-      allowedLicenses: ${{ inputs.allowedLicenses }}
-      semgrep_options: ${{ inputs.semgrep_options }}
-      security_scan_before_step_command: ${{ inputs.security_scan_before_step_command }}
-      security_scan_after_step_command: ${{ inputs.security_scan_after_step_command }}
-      pr_agent_before_step_command: ${{ inputs.pr_agent_before_step_command }}
-      pr_agent_after_step_command: ${{ inputs.pr_agent_after_step_command }}
-      caching_before_step_command: ${{ inputs.caching_before_step_command }}
-      caching_after_step_command: ${{ inputs.caching_after_step_command }}
-      technology_based_scans_before_step_command: ${{ inputs.technology_based_scans_before_step_command }}
-      technology_based_scans_after_step_command: ${{ inputs.technology_based_scans_after_step_command }}
-      container_scan_before_step_command: ${{ inputs.container_scan_before_step_command }}
-      container_scan_after_step_command: ${{ inputs.container_scan_after_step_command }} 
-    secrets: inherit
-    permissions: write-all
+  deprecated-upgrade-the-workflow:
+    runs-on: ubuntu-latest
+    steps:
+      - name: EndOfSupport upgrade to the new workflow
+        run: |
+          echo "::error::This workflow is deprecated and disabled. Upgrade to new workflow, refer to, https://studiographene.atlassian.net/wiki/spaces/SGKB/pages/2166816769/GitHub+Change+Announcements+Deprecating+CI+Workflows+In+Favour+Of+New+Central+Workflow+15+May+24"
       
